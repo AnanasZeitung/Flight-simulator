@@ -1,0 +1,356 @@
+{
+  "schema": 2,
+  "name": "BV 238",
+  "paint": "spitfire",
+  "parts": [
+    {
+      "id": "root",
+      "type": "fuselage",
+      "pos": {
+        "x": 0,
+        "y": 1.35,
+        "z": 0
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": false,
+      "dims": {
+        "length": 30,
+        "radius": 1.5,
+        "width": 3,
+        "height": 4.05,
+        "noseShape": "round",
+        "section": "roundedBox",
+        "foreSection": "inherit",
+        "midSection": "inherit",
+        "aftSection": "inherit",
+        "noseLength": 0.15,
+        "tailRatio": 0.1,
+        "tailWidth": null,
+        "tailHeight": null,
+        "tailRise": 1,
+        "noseRise": 0,
+        "foreWidth": 1,
+        "midWidth": 1,
+        "aftWidth": 0.65,
+        "foreHeight": 1,
+        "midHeight": 1,
+        "aftHeight": 0.65
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p2",
+      "type": "wing",
+      "pos": {
+        "x": 0.7,
+        "y": 2.85,
+        "z": 4.6
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "tipShape": "square",
+        "bendAt": 0.45,
+        "bendAngleDeg": 0,
+        "span": 18,
+        "rootChord": 4.2,
+        "tipChord": 1.5,
+        "sweepDeg": -2,
+        "dihedralDeg": 0,
+        "cantDeg": 0,
+        "incidenceDeg": 1,
+        "thickness": 0.22,
+        "rootThickness": null,
+        "tipThickness": null,
+        "controlPower": 1,
+        "winglet": 0
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p3",
+      "type": "cockpit",
+      "pos": {
+        "x": 0,
+        "y": 2.39,
+        "z": 12.47
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": false,
+      "dims": {
+        "length": 3,
+        "radius": 1.05,
+        "canopyShape": "greenhouse"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p4",
+      "type": "vtail",
+      "pos": {
+        "x": 0,
+        "y": 1.65,
+        "z": -9.8
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": false,
+      "dims": {
+        "tipShape": "square",
+        "bendAt": 0.5,
+        "bendAngleDeg": 0,
+        "span": 5.2,
+        "rootChord": 5.2,
+        "tipChord": 1.6,
+        "sweepDeg": 12,
+        "dihedralDeg": 0,
+        "cantDeg": 0,
+        "incidenceDeg": 0,
+        "thickness": 0.12,
+        "rootThickness": null,
+        "tipThickness": null,
+        "controlPower": 1,
+        "winglet": 0
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p5",
+      "type": "htail",
+      "pos": {
+        "x": 0.05,
+        "y": 3.55,
+        "z": -9.9
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "tipShape": "square",
+        "bendAt": 0.5,
+        "bendAngleDeg": 0,
+        "span": 5,
+        "rootChord": 2.9,
+        "tipChord": 0.8,
+        "sweepDeg": 10,
+        "dihedralDeg": 0,
+        "cantDeg": 0,
+        "incidenceDeg": -0.5,
+        "thickness": 0.13,
+        "rootThickness": null,
+        "tipThickness": null,
+        "controlPower": 0.9,
+        "winglet": 0
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p6",
+      "type": "engine",
+      "pos": {
+        "x": 3.3,
+        "y": 2.8,
+        "z": 6.5
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 3.5,
+        "radius": 0.55,
+        "thrustKN": 29.5,
+        "massKg": 920,
+        "kind": "prop",
+        "propRotation": "opposed",
+        "propBlades": 3,
+        "propDiameter": 2.4,
+        "gimbalDeg": 4,
+        "gimbalRateDeg": 35,
+        "rollTorqueNm": 35
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p7",
+      "type": "engine",
+      "pos": {
+        "x": 6.25,
+        "y": 2.75,
+        "z": 6.5
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 3.5,
+        "radius": 0.55,
+        "thrustKN": 29.5,
+        "massKg": 920,
+        "kind": "prop",
+        "propRotation": "opposed",
+        "propBlades": 3,
+        "propDiameter": 2.4,
+        "gimbalDeg": 4,
+        "gimbalRateDeg": 35,
+        "rollTorqueNm": 35
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p8",
+      "type": "engine",
+      "pos": {
+        "x": 9.25,
+        "y": 2.7,
+        "z": 6.5
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 3.5,
+        "radius": 0.55,
+        "thrustKN": 29.5,
+        "massKg": 920,
+        "kind": "prop",
+        "propRotation": "opposed",
+        "propBlades": 3,
+        "propDiameter": 2.4,
+        "gimbalDeg": 4,
+        "gimbalRateDeg": 35,
+        "rollTorqueNm": 35
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p9",
+      "type": "gear",
+      "pos": {
+        "x": 12,
+        "y": 2.8,
+        "z": 4.65
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 3.8,
+        "radius": 0.55,
+        "mount": "retractable"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p10",
+      "type": "gear",
+      "pos": {
+        "x": 0,
+        "y": -0.6000000000000001,
+        "z": 9.6
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": false,
+      "dims": {
+        "length": 0.6,
+        "radius": 0.35,
+        "mount": "retractable"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p11",
+      "type": "gear",
+      "pos": {
+        "x": 0.7,
+        "y": -0.3500000000000001,
+        "z": 0.04999999999999999
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 0.8,
+        "radius": 0.4,
+        "mount": "retractable"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p12",
+      "type": "gear",
+      "pos": {
+        "x": 0.7,
+        "y": -0.3500000000000001,
+        "z": 1.25
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 0.8,
+        "radius": 0.4,
+        "mount": "retractable"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p13",
+      "type": "gear",
+      "pos": {
+        "x": 0.7,
+        "y": -0.3500000000000001,
+        "z": 2.5
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 0.8,
+        "radius": 0.4,
+        "mount": "retractable"
+      },
+      "mirrorOffsetX": 0
+    },
+    {
+      "id": "p14",
+      "type": "wing",
+      "pos": {
+        "x": 0.7,
+        "y": 2.85,
+        "z": 4.6
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "tipShape": "square",
+        "bendAt": 0.45,
+        "bendAngleDeg": 0,
+        "span": 11.9,
+        "rootChord": 4.2,
+        "tipChord": 1.5,
+        "sweepDeg": -2,
+        "dihedralDeg": 0,
+        "cantDeg": 0,
+        "incidenceDeg": 1,
+        "thickness": 0.22,
+        "rootThickness": null,
+        "tipThickness": null,
+        "controlPower": 1,
+        "winglet": 0
+      },
+      "mirrorOffsetX": 0
+    }
+  ],
+  "controls": {
+    "invertRoll": false,
+    "invertYaw": false,
+    "aileronTrim": 0,
+    "rudderTrim": 0,
+    "automaticTrim": true
+  }
+}
