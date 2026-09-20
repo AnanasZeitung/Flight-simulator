@@ -3132,8 +3132,8 @@ updateFlightPolish=function(dt){previousPolishUpdate(dt);if(flightActive()&&came
 // No shader-only hiding: the same opening exists in hangar, external views and cockpit.
 function subtractCabinVolume(geo,part,fuselage,sign){
  const cutter=new THREE.IcosahedronGeometry(1,2),positions=cutter.attributes.position,planes=[];
- const center=partPosition(part,sign),rotation=partMountQuaternion(part,sign),fq=partMountQuaternion(fuselage).invert(),fp=V(fuselage.pos.x,fuselage.pos.y,fuselage.pos.z);
- const convert=i=>V().fromBufferAttribute(positions,i).multiply(V(part.dims.radius,part.dims.radius*.9*(part.dims.canopyShape==='low'?.64:part.dims.canopyShape==='framed'?.86:1),part.dims.length/2)).applyQuaternion(rotation).add(center).sub(fp).applyQuaternion(fq);
+ const rotation=partMountQuaternion(part,sign),center=partPosition(part,sign).add(V(0,-canopySillDrop(part.dims),0).applyQuaternion(rotation)),fq=partMountQuaternion(fuselage).invert(),fp=V(fuselage.pos.x,fuselage.pos.y,fuselage.pos.z);
+ const convert=i=>V().fromBufferAttribute(positions,i).multiply(V(part.dims.radius,part.dims.radius*.9*(part.dims.canopyShape==='low'?.64:part.dims.canopyShape==='framed'?.86:1)+canopySillDrop(part.dims),part.dims.length/2)).applyQuaternion(rotation).add(center).sub(fp).applyQuaternion(fq);
  const localCenter=center.clone().sub(fp).applyQuaternion(fq),bounds=new THREE.Box3();
  for(let i=0;i<positions.count;i+=3){const a=convert(i),b=convert(i+1),c=convert(i+2);bounds.expandByPoint(a).expandByPoint(b).expandByPoint(c);const plane=new THREE.Plane().setFromCoplanarPoints(a,b,c);if(plane.distanceToPoint(localCenter)>0)plane.negate();planes.push(plane);}cutter.dispose();
  const src=geo.index?geo.toNonIndexed():geo.clone(),p=src.attributes.position,u=src.attributes.uv,out=[],uv=[];
@@ -3330,15 +3330,16 @@ function setupStudioTools(){
 // Seat remains inside the actual glazing; mounting affects position, never view attitude.
 function canopyEyePoint(part){
  const d=part.dims,roof=canopyPoint(d,.5,Math.PI/2).y;
- return V(0,roof*.42,0).applyQuaternion(partMountQuaternion(part)).add(partPosition(part,1));
+ return V(aircraftCabinStyle==='airliner'&&cockpitStyle==='plane'?d.radius*.36:0,roof*.42,0).applyQuaternion(partMountQuaternion(part)).add(partPosition(part,1));
 }
 // Exterior glazing owns every upper frame, including in the pilot view.
 const oldWarbirdAccessory=buildAccessory;
+function canopySillDrop(d){return d.radius*.42;}
 function canopyPoint(d,t,a){
- const shape=d.canopyShape||'bubble',z=(t-.5)*d.length;
+ const shape=d.canopyShape||'bubble',z=(t-.5)*d.length,drop=canopySillDrop(d);
  let w,h;
- if(shape==='framed'||shape==='greenhouse'){const profile=Math.min(1,.12+Math.min(t,1-t)*4);w=profile;h=profile*(shape==='greenhouse'?1:.86);const x=Math.cos(a),y=Math.sin(a);return V(d.radius*w*Math.sign(x)*Math.pow(Math.abs(x),.55),d.radius*.9*h*Math.pow(y,.55),z);}
- w=Math.sqrt(Math.max(0,1-(2*t-1)**2));h=w*(shape==='low'?.64:1);return V(d.radius*w*Math.cos(a),d.radius*.9*h*Math.sin(a),z);
+ if(shape==='framed'||shape==='greenhouse'){const profile=Math.min(1,.12+Math.min(t,1-t)*4);w=profile;h=profile*(shape==='greenhouse'?1:.86);const x=Math.cos(a),y=Math.sin(a);return V(d.radius*w*Math.sign(x)*Math.pow(Math.abs(x),.55),(d.radius*.9*(shape==='greenhouse'?1:.86)+drop)*h/(shape==='greenhouse'?1:.86)*Math.pow(y,.55)-drop,z);}
+ w=Math.sqrt(Math.max(0,1-(2*t-1)**2));h=w*(shape==='low'?.64:1);return V(d.radius*w*Math.cos(a),(d.radius*.9*(shape==='low'?.64:1)+drop)*w*Math.sin(a)-drop,z);
 }
 buildAccessory=function(part){if(part.type!=='cockpit')return oldWarbirdAccessory(part);
  const d=part.dims,g=new THREE.Group(),verts=[],indices=[],N=32,M=24;
@@ -3352,7 +3353,7 @@ buildAccessory=function(part){if(part.type!=='cockpit')return oldWarbirdAccessor
  // End-cap sill connects both base endpoints; rings close the upper corners.
  if(['framed','greenhouse'].includes(d.canopyShape))for(const t of [0,1])tube([canopyPoint(d,t,0),canopyPoint(d,t,Math.PI)]);
  // End closures for the faceted canopy; the curved versions meet at a point.
- if(['framed','greenhouse'].includes(d.canopyShape))for(const t of [0,1]){const vs=[0,0,(t-.5)*d.length];for(let j=0;j<=24;j++)vs.push(...canopyPoint(d,t,j/24*Math.PI).toArray());const cap=new THREE.BufferGeometry(),idx=[];for(let j=1;j<=24;j++)idx.push(0,j,j+1);cap.setAttribute('position',new THREE.Float32BufferAttribute(vs,3));cap.setIndex(idx);cap.computeVertexNormals();meshOf(cap,glass,g);}
+ if(['framed','greenhouse'].includes(d.canopyShape))for(const t of [0,1]){const vs=[0,-canopySillDrop(d),(t-.5)*d.length];for(let j=0;j<=24;j++)vs.push(...canopyPoint(d,t,j/24*Math.PI).toArray());const cap=new THREE.BufferGeometry(),idx=[];for(let j=1;j<=24;j++)idx.push(0,j,j+1);cap.setAttribute('position',new THREE.Float32BufferAttribute(vs,3));cap.setIndex(idx);cap.computeVertexNormals();meshOf(cap,glass,g);}
  return g;
 };
 const oldWarbirdEngine=buildEngineMesh;
