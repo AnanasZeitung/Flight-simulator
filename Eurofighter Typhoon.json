@@ -1,6 +1,6 @@
 {
   "schema": 2,
-  "name": "Eurofighter Typhoon ",
+  "name": "Eurofighter Typhoon",
   "paint": "metal",
   "parts": [
     {
@@ -35,7 +35,9 @@
         "aftWidth": 0.9,
         "foreHeight": 0.85,
         "midHeight": 1,
-        "aftHeight": 0.7
+        "aftHeight": 0.7,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -71,7 +73,9 @@
         "aftWidth": 0.96,
         "foreHeight": 0.85,
         "midHeight": 1,
-        "aftHeight": 0.95
+        "aftHeight": 0.95,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -107,7 +111,9 @@
         "aftWidth": 0.96,
         "foreHeight": 0.85,
         "midHeight": 1,
-        "aftHeight": 0.95
+        "aftHeight": 0.95,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -143,7 +149,9 @@
         "aftWidth": 1.1,
         "foreHeight": 1,
         "midHeight": 1,
-        "aftHeight": 0.8
+        "aftHeight": 0.8,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -229,7 +237,8 @@
         "propDiameter": 2.4,
         "gimbalDeg": 4,
         "gimbalRateDeg": 35,
-        "rollTorqueNm": 35
+        "rollTorqueNm": 35,
+        "vectoring": false
       },
       "mirrorOffsetX": 0
     },
@@ -325,7 +334,9 @@
         "aftWidth": 0.4,
         "foreHeight": 0.4,
         "midHeight": 0.5,
-        "aftHeight": 0.4
+        "aftHeight": 0.4,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -361,7 +372,9 @@
         "aftWidth": 0.4,
         "foreHeight": 0.4,
         "midHeight": 0.5,
-        "aftHeight": 0.4
+        "aftHeight": 0.4,
+        "massScale": 1,
+        "payloadKg": 0
       },
       "mirrorOffsetX": 0
     },
@@ -380,7 +393,8 @@
         "length": 1.25,
         "radius": 0.055,
         "weaponKey": "ww2_cannon",
-        "ammo": 300
+        "ammo": 250,
+        "rpm": 1700
       },
       "mirrorOffsetX": 0
     },
@@ -418,7 +432,7 @@
         "length": 2.55,
         "radius": 0.3,
         "weaponKey": "modern_agm",
-        "ammo": 1
+        "ammo": 3
       },
       "mirrorOffsetX": 0
     },
@@ -451,12 +465,12 @@
       },
       "rotY": 0,
       "rotX": 0,
-      "mirror": true,
+      "mirror": false,
       "dims": {
         "length": 0.5,
         "radius": 0.09,
         "weaponKey": "flare_pod",
-        "ammo": 30
+        "ammo": 80
       },
       "mirrorOffsetX": 0
     },
@@ -508,13 +522,32 @@
         "ammo": 1
       },
       "mirrorOffsetX": 0
+    },
+    {
+      "id": "p20",
+      "type": "weapon",
+      "pos": {
+        "x": 0.9,
+        "y": 0.14,
+        "z": -5.4
+      },
+      "rotY": 0,
+      "rotX": 0,
+      "mirror": true,
+      "dims": {
+        "length": 0.65,
+        "radius": 0.14,
+        "weaponKey": "chaff_pod",
+        "ammo": 80
+      },
+      "mirrorOffsetX": 0
     }
   ],
   "controls": {
     "invertRoll": false,
     "invertYaw": false,
-    "aileronTrim": 0.02007840170064418,
-    "rudderTrim": 0.039723042043859055,
+    "aileronTrim": 0,
+    "rudderTrim": 0,
     "automaticTrim": true
   }
 }

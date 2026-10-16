@@ -3044,7 +3044,7 @@ function setupGroundRocket(){
 function updateRocketCourseNotes(){document.querySelectorAll('.mission-course').forEach(s=>{const note=s.parentElement.parentElement.querySelector('small');if(note)note.textContent=isRocketCourse()?'로켓 엔진 필수 · 현재 설계로 지면 수직 발사 · 상승 또는 체공 목표 달성':'노란 게이트를 순서대로 통과하세요. 중앙 통과 시 고득점.';});}
 function updateGroundRocket(dt){
  drawRocketMission();
- if($('friction-status'))$('friction-status').textContent=flightActive()&&state.grounded?`${frictionState.surface} · ${frictionState.mode} · 마찰 ${Math.round(frictionState.force)} N`:'';
+ if($('friction-status'))$('friction-status').textContent=flightActive()&&state.grounded?`${frictionState.mode.replace(/^구름 저항\s*[·/]\s*/, '')} · 마찰 ${Math.round(frictionState.force)} N`:'';
  $('rocket-control-note').textContent=flightActive()&&isRocketVehicle()?`로켓 보조 ${$('stability-assist').checked?'ON: 각속도 감쇠':'OFF: 직접 노즐 조작'} · 피치/요는 주엔진 추력 필요`:'';
  if($('rocket-feed-mode'))$('rocket-feed-mode').parentElement.style.display=cockpitStyle==='rocket'?'block':'none';
 }
@@ -4581,6 +4581,8 @@ function setupPanelAlignment(){
  $('flight-left-column').append($('world-status'));
  const margins=document.createElement('style');margins.textContent='#flight-panel .aligned-button-row>button{margin:0!important}';document.head.append(margins);
  const css=document.createElement('style');css.textContent=`#flight-panel button{box-sizing:border-box;width:100%;min-width:0;margin:0;white-space:normal}#flight-panel .aligned-button-row,#flight-panel .compact-row{display:flex;gap:5px;width:100%;margin:6px 0}#flight-panel .aligned-button-row>button,#flight-panel .compact-row>button{flex:1 1 0;width:0}#flight-panel .buttons{width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}#flight-panel details{box-sizing:border-box;width:100%}#flight-left-column>*{flex-shrink:0}#mission-navigation.strike-minimal #retry-course{display:none!important}`;document.head.append(css);
+ const wingPanel=$('wingman-panel');
+ for(const commands of [['escort','engage'],['attack'],['hold','return']]){const row=document.createElement('div');row.className='aligned-button-row';const buttons=commands.map(k=>wingPanel.querySelector('[data-wing="'+k+'"]'));buttons[0].before(row);buttons.forEach(b=>row.append(b));}
  // Preserve existing control grids; align every other consecutive button group.
  const parents=[$('flight-panel'),...$('flight-panel').querySelectorAll('div,details')];
  for(const parent of parents){if(parent.matches('.buttons,.compact-row,.aligned-button-row'))continue;let run=[];const flush=()=>{if(!run.length)return;const row=document.createElement('div');row.className='aligned-button-row';run[0].before(row);for(const button of run)row.append(button);run=[];};for(const child of [...parent.children]){if(child.tagName==='BUTTON'){run.push(child);if(run.length===2)flush();}else flush();}flush();}
