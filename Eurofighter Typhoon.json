@@ -465,7 +465,7 @@
       },
       "rotY": 0,
       "rotX": 0,
-      "mirror": false,
+      "mirror": true,
       "dims": {
         "length": 0.5,
         "radius": 0.09,
