@@ -4248,7 +4248,7 @@ const turretPolish=updateFlightPolish;updateFlightPolish=function(dt){turretPoli
  tacticalClock+=dt;if(tacticalClock>=.1){tacticalClock=0;$('tactical-flight').innerHTML=`<div>THR <b>${Math.round(state.throttle*100)} %</b></div><div>IAS <b>${Math.round(ias*3.6)} km/h</b></div><div>TAS <b>${Math.round(v*3.6)} km/h</b></div><div>ALT <b>${Math.round(state.pos.y+30)} m</b></div><div>V/S <b>${state.vel.y.toFixed(1)} m/s</b></div><div>G <b>${$('val-g').textContent}</b></div><div class="flight-secondary">PITCH ${a.pitch.toFixed(1)}° · ROLL ${(a.roll||0).toFixed(1)}°<br>AoA ${$('val-aoa').textContent}° · L/D ${$('val-ld').textContent}</div>`;
  $('tactical-heading').textContent='HDG  '+Math.round(a.heading||0).toString().padStart(3,'0')+'°';
  const stores=$('tactical-stores');stores.replaceChildren();stores.hidden=!packs.combat;
- if(packs.combat){const rows=[['무장',turretActive?'방어포탑':w?w.name:'무장 없음'],['잔탄',turretActive&&station?weaponRounds(station.p,station.sign):partsList.filter(p=>p.type==='weapon'&&p.dims.weaponKey===currentWeaponKey()).reduce((n,p)=>n+weaponTotal(p),0)]];for(const [label,value]of rows){const row=document.createElement('div'),name=document.createElement('span'),amount=document.createElement('b');name.textContent=label;amount.textContent=String(value);row.append(name,amount);stores.append(row);}}
+ if(packs.combat){const rows=[['무장',turretActive?'TURRET':w?({cold_ir:'SR-AAM',modern_aam:'AAM',modern_agm:'AGM',ww2_mg:'MG',ww2_cannon:'CANNON',cold_cannon:'CANNON',ww2_turret:'TURRET',ww2_bomb:'BOMB',modern_bomb:'GBU',ww2_rocket:'ROCKET'}[currentWeaponKey()]||w.name):'무장 없음'],['잔탄',turretActive&&station?weaponRounds(station.p,station.sign):partsList.filter(p=>p.type==='weapon'&&p.dims.weaponKey===currentWeaponKey()).reduce((n,p)=>n+weaponTotal(p),0)]];for(const [label,value]of rows){const row=document.createElement('div'),name=document.createElement('span'),amount=document.createElement('b');name.textContent=label;amount.textContent=String(value);if(label==='무장')amount.title=turretActive?'방어포탑':w?.name||'무장 없음';row.append(name,amount);stores.append(row);}}
 
  }
  $('turret-reticle').hidden=!turretActive;$('turret-view').textContent=turretActive?'조종 복귀 '+keyName('KeyU'):'방어포탑 '+keyName('KeyU');$('turret-next').disabled=!turretActive||turretStations().length<2;
@@ -5964,7 +5964,7 @@ function makeAAEmplacement(){const g=new THREE.Group();g.name='Twin-barrel anti-
 function configureAdaptiveDefense(){if(!isWeaponTrial()||isBaseDefense())return;const tier=combatEquipmentTier();for(const [i,t]of combatTargets.filter(t=>t.sam).entries()){const gun=tier===0||i<2;const sites=[[STRIKE.x-370,STRIKE.z-400],[ENEMY_BASE.x+440,ENEMY_BASE.z+720],[ENEMY_BASE.x-420,ENEMY_BASE.z-720]];const site=sites[i%sites.length];t.pos.set(site[0],heightGlobal(site[0],site[1])-30,site[1]);t.home.copy(t.pos);t.defenseKey=gun?'ww2_cannon':tier===1?'cold_ir':'modern_aam';t.loadout={gun:gun?350:0,cold_ir:!gun&&tier===1?6:0,modern_aam:!gun&&tier===2?6:0,flare:0,chaff:0};disposeMissionObject(t.mesh);t.mesh=gun?makeAAEmplacement():makeStrikeObject('sam',t.defenseKey);if(!gun&&tier===1)t.mesh.name='Short-range IR air defense';combatGroup.add(t.mesh);t.mesh.position.copy(t.pos);}}
 const equipmentResetTargets=resetCombatTargets;resetCombatTargets=function(){sortieEquipment=playerEquipment();enemyAirfieldTargets=[];enemyAirfieldTarget=null;enemyAirfieldDamage=false;equipmentResetTargets();configureAdaptiveDefense();};
 
-let serviceNotice,airportLightSets=[],airportFloodSites=[],airportFloodLights=[],instrumentSideStrips=[],towerWindowMaterials=[];
+let serviceNotice,noticeLayoutClock=0,airportLightSets=[],airportFloodSites=[],airportFloodLights=[],instrumentSideStrips=[],towerWindowMaterials=[];
 // Faceted outward-sloping cab, service shaft and annex inspired by published
 // Pope Field tower photographs; dimensions are adapted to this fictional airport.
 function makeControlTower(parent,x,z,height=20){
@@ -6017,7 +6017,7 @@ function buildAirportServices(){
 }
 function addInstrumentStrip(parent,x,y,z,w,h){const g=new THREE.Group();g.name='Integrated caution and display control strip';g.position.set(x,y,z);parent.add(g);meshOf(softCabinBox(w,h,.035,.009),cabinMaterial(0x26322d),g);const lamps=[];for(let i=0;i<3;i++){const row=new THREE.Group();g.add(row);row.position.y=h*.28-i*h*.22;const lens=meshOf(new THREE.PlaneGeometry(w*.78,h*.12),new THREE.MeshBasicMaterial({color:0x22362b,toneMapped:false}),row,V(0,0,.023));readableCabinLabel(row,['GEAR','BRAKE','ASSIST'][i],0,-h*.095,.024,w*.82,h*.06);lamps.push(lens);}const knob=meshOf(new THREE.CylinderGeometry(w*.15,w*.17,.018,20),cabinMaterial(0x9ca495,.4),g,V(0,-h*.35,.033));knob.rotation.x=Math.PI/2;readableCabinLabel(g,'BRT',0,-h*.46,.023,w*.75,h*.05);g.userData.lamps=lamps;g.traverse(o=>o.layers.set(2));instrumentSideStrips.push(g);return g;}
 function setupAirfieldServices(){
- serviceNotice=document.createElement('div');serviceNotice.id='rearm-notice';serviceNotice.setAttribute('role','status');serviceNotice.hidden=true;document.body.append(serviceNotice);const css=document.createElement('style');css.textContent='#rearm-notice{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:55;padding:9px 22px;background:transparent;border:0;color:#e5f7eb;font:600 15px FlightUI,sans-serif;pointer-events:none;text-shadow:0 1px 2px #000}#rearm-notice[hidden]{display:none}';document.head.append(css);
+ serviceNotice=document.createElement('div');serviceNotice.id='rearm-notice';serviceNotice.setAttribute('role','status');serviceNotice.hidden=true;document.body.append(serviceNotice);const css=document.createElement('style');css.textContent='#rearm-notice{position:fixed;top:64px;left:50%;transform:translateX(-50%);z-index:55;padding:9px 22px;background:transparent;border:0;color:#e5f7eb;font:600 15px FlightUI,sans-serif;pointer-events:none;text-shadow:0 1px 2px #000}#rearm-notice[hidden]{display:none}#tactical-stores b{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;overflow-wrap:normal}#rearm-notice{max-width:calc(100vw - 32px);box-sizing:border-box;text-align:center;line-height:20px;padding:0 8px}';document.head.append(css);
  for(const [i,o]of [weaponCRT,weaponVideoScreen,weaponVideoReticle].entries()){o.renderOrder=30+i;o.material.depthTest=true;o.material.depthWrite=false;}
  weaponVideoScreen.position.z=.025;weaponVideoReticle.position.z=.029;
  weaponCamera.far=18000;weaponCamera.updateProjectionMatrix();
@@ -6028,6 +6028,14 @@ function setupAirfieldServices(){
 }
 function updateAirfieldServices(dt){
  if(!serviceNotice)return;if(rearmMessage==='재보급 완료'&&combatClock>=rearmCompleteUntil)rearmMessage='';serviceNotice.hidden=!flightActive()||!packs.combat||state.crashed||!rearmMessage;serviceNotice.textContent=rearmMessage;
+ // Place transient messages below visible mission information, not at a fixed
+ // height shared with the mission panel. Measure only while the notice is active.
+ noticeLayoutClock-=dt;
+ if(!serviceNotice.hidden&&noticeLayoutClock<=0){noticeLayoutClock=.1;
+  const mission=$('hud-mission'),rect=mission.getBoundingClientRect(),top=rect.width&&rect.height?Math.max(46,rect.bottom+8):46;
+  serviceNotice.style.top=top+'px';const toast=$('toast');if(toast)toast.style.top=Math.max(110,top+serviceNotice.offsetHeight+12)+'px';
+ }else if(serviceNotice.hidden){noticeLayoutClock=0;const toast=$('toast');if(toast)toast.style.top='';}
+
  const night=flightHour===0?1:flightHour===6||flightHour===18?.65:0;
  for(const m of towerWindowMaterials)m.emissiveIntensity=night*.35;
  for(const set of airportLightSets){set.visible=flightActive();set.material.uniforms.night.value=night;}
