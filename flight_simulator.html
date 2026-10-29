@@ -1929,7 +1929,7 @@ function computePhysicsData(){
   Ixx+=mass*(r.y*r.y+r.z*r.z)+intrinsic.x*m[0]**2+intrinsic.y*m[4]**2+intrinsic.z*m[8]**2;
   Iyy+=mass*(r.x*r.x+r.z*r.z)+intrinsic.x*m[1]**2+intrinsic.y*m[5]**2+intrinsic.z*m[9]**2;
   Izz+=mass*(r.x*r.x+r.y*r.y)+intrinsic.x*m[2]**2+intrinsic.y*m[6]**2+intrinsic.z*m[10]**2;
-  if(part.type==='engine'){engines.push({r_body:r,thrustN:d.thrustKN*1000,dir:V(0,0,1).applyQuaternion(partMountQuaternion(part,i.sign)),kind:d.kind,spin:(d.propRotation==='reverse'?-1:d.propRotation==='opposed'?i.sign:1),propDiameter:d.propDiameter||2.4,partId:part.id,gimbalDeg:d.gimbalDeg??4,gimbalRateDeg:d.gimbalRateDeg??35,rollTorqueNm:d.rollTorqueNm??35,gimbalPitch:0,gimbalYaw:0,rollJet:0});continue;}
+  if(part.type==='engine'){engines.push({sign:i.sign,r_body:r,thrustN:d.thrustKN*1000,dir:V(0,0,1).applyQuaternion(partMountQuaternion(part,i.sign)),kind:d.kind,spin:(d.propRotation==='reverse'?-1:d.propRotation==='opposed'?i.sign:1),propDiameter:d.propDiameter||2.4,partId:part.id,gimbalDeg:d.gimbalDeg??4,gimbalRateDeg:d.gimbalRateDeg??35,rollTorqueNm:d.rollTorqueNm??35,gimbalPitch:0,gimbalYaw:0,rollJet:0});continue;}
   if(!surfaceTypes.includes(part.type))continue;
   const area=wingArea(d,0,d.span);
   
@@ -2312,7 +2312,7 @@ function setupEnvironment(){
 function initScene(){
  scene=new THREE.Scene();scene.fog=new THREE.Fog(0xa8b8bb,1900,3600);
  camera=new THREE.PerspectiveCamera(60,innerWidth/innerHeight,.08,8000);
- renderer=new THREE.WebGLRenderer({antialias:!graphicsHealth.safe,logarithmicDepthBuffer:true,powerPreference:'default'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(graphicsPixelRatio());
+ renderer=new THREE.WebGLRenderer({antialias:true,logarithmicDepthBuffer:true,powerPreference:'default'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(graphicsPixelRatio());
  renderer.outputEncoding=THREE.sRGBEncoding;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.85;
  renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;document.getElementById('canvas-container').appendChild(renderer.domElement);installGraphicsEvents();
  scene.add(new THREE.HemisphereLight(0xb4d2e8,0x71684d,.5));
@@ -2479,8 +2479,11 @@ function renderEditor(){
   for(const [key,label,t] of [['rootThickness','익근 두께/익현 비율',0],['tipThickness','익단 두께/익현 비율',1]])box.append(sliderField(label,wingThickness(d,t),.04,.22,.01,v=>d[key]=v));slider('조종면 효과 (0: 고정 핀)','controlPower',0,2,.1);
   if(p.type==='wing'){if(d.tipShape==='round'){const note=document.createElement('small');note.textContent='둥근 끝에서는 윙렛을 표시하지 않습니다.';box.append(note);}else slider('윙렛 높이 (m)','winglet',0,5,.05);}
  }else{
-  slider(p.type==='gear'&&d.mount==='float'?'지지대 길이 (m)':'부품 길이 (m)','length',.3,20);if(!(p.type==='gear'&&d.mount==='float'))slider('부품 반경 (m)','radius',p.type==='weapon'?.04:.15,5,.01);
-  if(p.type==='cockpit')box.append(selectField('캐노피 형태',[['bubble','버블형'],['framed','각진 프레임형'],['greenhouse','다분할 온실형'],['low','낮은 유선형']],d.canopyShape||'bubble',v=>d.canopyShape=v));
+  slider(p.type==='gear'&&d.mount==='float'?'지지대 길이 (m)':'부품 길이 (m)','length',.3,20);if(p.type==='fuel'){
+   for(const [key,label,value] of [['tankWidth','탱크 가로 · 폭 (m)',tankDimensions(p).width],['tankHeight','탱크 세로 · 높이 (m)',tankDimensions(p).height]])box.append(sliderField(label,value,.08,16,.01,v=>d[key]=v));
+   box.append(selectField('탱크 형상',[['streamlined','유선형'],['box','육면체']],d.tankShape||'streamlined',v=>d.tankShape=v));
+  }else if(!(p.type==='gear'&&d.mount==='float'))slider('부품 반경 (m)','radius',p.type==='weapon'?.04:.15,5,.01);
+  if(p.type==='cockpit')box.append(selectField('캐노피 형태',[['bubble','버블형'],['framed','각진 프레임형'],['greenhouse','다분할 온실형']],d.canopyShape||'bubble',v=>d.canopyShape=v));
   if(p.type==='engine'&&d.kind==='prop'){box.append(selectField('회전 방향 · 조종석에서 전방 기준',[['normal','시계 방향'],['reverse','반시계 방향'],['opposed','대칭 쌍 반대 회전']],d.propRotation||'normal',v=>{d.propRotation=v;rebuildAircraft();}));slider('프로펠러 지름 (m)','propDiameter',.6,5,.1);slider('프로펠러 날개 수','propBlades',2,4,1);}
   if(p.type==='gear')box.append(selectField('착륙장치 방식',[['retractable','수납식'],['fixed','고정식 · V형 지지대'],...(packs.naval||d.mount==='float'?[['float','플로트 · 수상 착륙']]:[])],d.mount||'retractable',v=>{d.mount=v;renderPartsList();renderEditor();}));
   if(p.type==='weapon'){box.append(selectField('무장 종류',Object.entries(weaponCatalog).map(([k,v])=>[k,v.name]),d.weaponKey,v=>{d.weaponKey=v;d.ammo=weaponCatalog[v].ammo;[d.length,d.radius]=weaponSize[v];renderEditor();}));slider('탑재 수량','ammo',1,5000,1);}
@@ -3114,19 +3117,26 @@ aircraftMaterial=function(kind='paint'){
  return material;
 };
 function aircraftAngles(){const f=V(0,0,1).applyQuaternion(state.quat),horizontal=Math.hypot(f.x,f.z),e=new THREE.Euler().setFromQuaternion(state.quat,'YXZ');return {pitch:Math.asin(clamp(f.y,-1,1))/DEG,roll:horizontal>.001?e.z/DEG:null,heading:horizontal>.001?(Math.atan2(-f.x,f.z)/DEG+360)%360:null,tilt:Math.acos(clamp(f.y,-1,1))/DEG};}
-// Follow the vehicle from an elevated horizontal orbit. Never put the camera under a vertical rocket.
+// Follow heading and pitch, but exclude body roll from the external camera frame.
+let followPitch99=0;
 updateCamera=function(dt){
  const near=cameraMode===2?.008:.08;if(camera.near!==near){camera.near=near;camera.updateProjectionMatrix();}
  if(lookReturning){const blend=Math.exp(-18*Math.min(dt,.05));lookYaw*=blend;lookPitch*=blend;if(Math.hypot(lookYaw,lookPitch)<.0006){lookYaw=lookPitch=0;lookReturning=false;}}
  if(cameraMode===2){revisionCamera(dt);cockpitBaseQuaternion.copy(camera.quaternion);camera.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(lookPitch,lookYaw,0,'YXZ')));protectFlightCamera();return;}
  const f=V(0,0,1).applyQuaternion(state.quat),h=Math.hypot(f.x,f.z);
- if(h>.12){let angle=Math.atan2(f.x,f.z),delta=THREE.MathUtils.euclideanModulo(angle-lastFlightHeading+Math.PI,Math.PI*2)-Math.PI;lastFlightHeading+=delta*(1-Math.exp(-dt*5));}
- const fus=phys.fuselageDims,L=fus.length,dist=Math.max(cameraMode===0?22:9,L*(cameraMode===0?2.2:1.15)),elevation=clamp((cameraMode===0?.10:.085)+lookPitch,-1.3,1.3),az=lastFlightHeading+lookYaw;
+ if(h>.12){const angle=Math.atan2(f.x,f.z),delta=THREE.MathUtils.euclideanModulo(angle-lastFlightHeading+Math.PI,Math.PI*2)-Math.PI;lastFlightHeading+=delta*(1-Math.exp(-Math.min(dt,.1)*10));}
+ const wantedPitch=isRocketVehicle()?0:Math.asin(clamp(f.y,-1,1));followPitch99+=(wantedPitch-followPitch99)*(1-Math.exp(-Math.min(dt,.1)*10));
+ const fus=phys.fuselageDims,L=fus.length,dist=Math.max(cameraMode===0?22:9,L*(cameraMode===0?2.2:1.15)),elevation=clamp((cameraMode===0?.145:.12)-followPitch99+lookPitch,-1.32,1.32),az=lastFlightHeading+lookYaw;
  const offset=V(-Math.sin(az)*Math.cos(elevation)*dist,Math.sin(elevation)*dist,-Math.cos(az)*Math.cos(elevation)*dist);
  const desired=state.pos.clone().add(offset);camera.position.lerp(desired,1-Math.exp(-Math.min(dt,1)*16));
- protectFlightCamera();camera.up.set(0,1,0);camera.lookAt(state.pos.clone().add(V(0,dist*.085,0)));
+ protectFlightCamera();camera.up.set(0,1,0);
+ // Aim at the same finite-distance nose reference as the direction cue.
+ const aimForward=f.clone().applyAxisAngle(V(0,1,0),lookYaw);
+ const aimRight=V(Math.cos(az),0,-Math.sin(az));
+ aimForward.applyAxisAngle(aimRight,lookPitch);
+ camera.lookAt(state.pos.clone().addScaledVector(aimForward,1500));
 };
-const polishReset=resetFlight;resetFlight=function(){polishReset();lastFlightHeading=0;};
+const polishReset=resetFlight;resetFlight=function(){polishReset();const f=V(0,0,1).applyQuaternion(state.quat);lastFlightHeading=Math.hypot(f.x,f.z)>.12?Math.atan2(f.x,f.z):0;followPitch99=isRocketVehicle()?0:Math.asin(clamp(f.y,-1,1));};
 function updateExternalAircraft(){
  if(!aircraftGroup)return;aircraftGroup.visible=!flightActive()||!state.crashed;
  for(const group of aircraftGroup.children){const p=partsList.find(p=>p.id===group.userData.partId);if(!p)continue;if(p.type==='cockpit')group.visible=true; if(p.type==='cockpit')group.traverse(o=>{if(o.userData.cabinFurniture)o.visible=!(flightActive()&&cameraMode===2&&cockpitStyle==='plane');});}
@@ -3447,7 +3457,9 @@ function canopyEyePoint(part){
 // Exterior glazing owns every upper frame, including in the pilot view.
 const oldWarbirdAccessory=buildAccessory;
 function canopySillDrop(d){return d.radius*.42;}
-function canopyPoint(d,t,a){
+function canopyHeight97(d){return d.canopyHeight??d.radius*.9*(d.canopyShape==='low'?.64:d.canopyShape==='framed'?.86:1);}
+function canopyPoint(d,t,a){const shape=d.canopyShape==='low'?'bubble':d.canopyShape,base={...d,canopyShape:shape},v=originalCanopyPoint97(base,t,a),drop=canopySillDrop(d),roof=d.radius*.9*(shape==='framed'?.86:1);v.y=(v.y+drop)*(canopyHeight97(d)+drop)/(roof+drop)-drop;return v;}
+function originalCanopyPoint97(d,t,a){
  const shape=d.canopyShape||'bubble',z=(t-.5)*d.length,drop=canopySillDrop(d);
  let w,h;
  if(shape==='framed'||shape==='greenhouse'){const profile=Math.min(1,.12+Math.min(t,1-t)*4);w=profile;h=profile*(shape==='greenhouse'?1:.86);const x=Math.cos(a),y=Math.sin(a);return V(d.radius*w*Math.sign(x)*Math.pow(Math.abs(x),.55),(d.radius*.9*(shape==='greenhouse'?1:.86)+drop)*h/(shape==='greenhouse'?1:.86)*Math.pow(y,.55)-drop,z);}
@@ -3458,7 +3470,7 @@ buildAccessory=function(part){if(part.type!=='cockpit')return oldWarbirdAccessor
  for(let i=0;i<=N;i++)for(let j=0;j<=M;j++)verts.push(...canopyPoint(d,i/N,j/M*Math.PI).toArray());
  for(let i=0;i<N;i++)for(let j=0;j<M;j++){const a=i*(M+1)+j,b=a+M+1;indices.push(a,b,a+1,b,b+1,a+1);}
  const geo=new THREE.BufferGeometry();geo.setAttribute('position',new THREE.Float32BufferAttribute(verts,3));geo.setIndex(indices);geo.computeVertexNormals();const glass=aircraftMaterial('glass');glass.side=THREE.DoubleSide;meshOf(geo,glass,g).name='Exterior canopy glazing';
- const frame=aircraftMaterial();const tube=pts=>meshOf(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.014,6,false),frame,g);
+ const frame=aircraftMaterial();const tube=pts=>meshOf(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts),48,.0112,8,false),frame,g);
  const bands=d.canopyShape==='greenhouse'?[0,.08,.25,.45,.65,.85,.95,1]:d.canopyShape==='framed'?[0,.1,.3,.8,.95,1]:[.22,.8];
  for(const t of bands)tube(Array.from({length:25},(_,j)=>canopyPoint(d,t,j/24*Math.PI)));
  for(const a of [0,Math.PI,...(d.canopyShape==='greenhouse'?[Math.PI*.3,Math.PI*.7]:[])])tube(Array.from({length:33},(_,i)=>canopyPoint(d,i/32,a)));
@@ -3523,7 +3535,7 @@ massFor=function(p,sign=1){const base=previousProfileMass(p,sign);if(p.type!=='f
 const previousTensorPhysics=computePhysicsData;
 computePhysicsData=function(){previousTensorPhysics();const I=[0,0,0,0,0,0,0,0,0];
  for(const item of buildInstances()){
-  const {part,mass,centroid}=item,d=part.dims,r=centroid.clone().sub(phys.cg),sizes=surfaceTypes.includes(part.type)?V(d.span,.12,(d.rootChord+d.tipChord)/2):V(d.width||2*(d.radius||.3),d.height||2*(d.radius||.3),d.length||1);
+  const {part,mass,centroid}=item,d=part.dims,r=centroid.clone().sub(phys.cg),sizes=surfaceTypes.includes(part.type)?V(d.span,.12,(d.rootChord+d.tipChord)/2):V(d.tankWidth??d.width??2*(d.radius||.3),d.tankHeight??d.height??2*(d.radius||.3),d.length||1);
   const principal=[mass*(sizes.y**2+sizes.z**2)/12,mass*(sizes.x**2+sizes.z**2)/12,mass*(sizes.x**2+sizes.y**2)/12],R=(surfaceTypes.includes(part.type)?item.mat:new THREE.Matrix4().makeRotationFromQuaternion(partMountQuaternion(part,item.sign))).elements,rv=r.toArray();
   for(let a=0;a<3;a++)for(let b=0;b<3;b++){let v=mass*((a===b?r.lengthSq():0)-rv[a]*rv[b]);for(let k=0;k<3;k++)v+=principal[k]*R[k*4+a]*R[k*4+b];I[a*3+b]+=v;}
  }
@@ -3983,19 +3995,21 @@ const packAccessory=buildAccessory;buildAccessory=function(p){if(p.type!=='weapo
 function weaponTypes(){return [...new Set(partsList.filter(p=>p.type==='weapon'&&weaponCatalog[p.dims.weaponKey]?.kind!=='countermeasure').map(p=>p.dims.weaponKey))];}
 function currentWeaponKey(){const types=weaponTypes();return types[selectedWeapon%Math.max(1,types.length)];}
 function cycleWeapon(){if(!packs.combat)return;selectedWeapon++;targetLock=0;combatFireHeld=false;}
+let rearmServicedStop=false;
 let targetLock=0,weaponTriggerDown=false,weaponReleaseAt=0,rearmTime=0,rearmMessage='',rearmCompleteUntil=0;
 function weaponStation(p,sign=1){return p.id+':'+sign;}
 function weaponRounds(p,sign=1){return weaponAmmo.get(weaponStation(p,sign))??p.dims.ammo;}
 function weaponTotal(p){return weaponRounds(p,1)+(p.mirror?weaponRounds(p,-1):0);}
 function updateRearm(dt){
  if(rearmMessage==='재보급 완료'&&combatClock>=rearmCompleteUntil)rearmMessage='';
- const deficient=fuelNeedsService()||partsList.some(p=>p.type==='weapon'&&weaponTotal(p)<p.dims.ammo*(p.mirror?2:1));
+ const storesLow=partsList.some(p=>p.type==='weapon'&&weaponTotal(p)<p.dims.ammo*(p.mirror?2:1)),damageLow=moduleEnabled()?playerModules.some(m=>m.hp<.999||m.fire>0||m.leak>0):playerCombatHealth<99.99;
  const x=state.pos.x+worldOffset.x,z=state.pos.z+worldOffset.z;
  const ready=state.grounded&&!state.crashed&&state.vel.length()<1&&state.throttle<.05&&!keys.Space&&!combatFireHeld&&!salvoHeld&&(onRunway(x,z)||onCarrier(x,z));
- if(!deficient){rearmTime=0;return;}
- if(!ready){rearmTime=0;rearmMessage='';return;}
+ if(!ready){rearmServicedStop=false;rearmTime=0;rearmMessage='';return;}
+ const deficient=storesLow||damageLow||(!rearmServicedStop&&fuelNeedsService());
+ if(!deficient){rearmTime=0;if(rearmMessage!=='재보급 완료')rearmMessage='';return;}
  rearmTime+=dt;rearmMessage='재보급 '+Math.min(100,Math.floor(rearmTime/10*100))+'%';
- if(rearmTime>=10){refillFuel();weaponAmmo.clear();weaponCooldown.clear();refreshWeaponMass();updateWeaponVisuals();rearmTime=0;rearmMessage='재보급 완료';rearmCompleteUntil=combatClock+4;}
+ if(rearmTime>=10){rearmServicedStop=true;playerCombatHealth=100;refillFuel();weaponAmmo.clear();weaponCooldown.clear();refreshWeaponMass();updateWeaponVisuals();rearmTime=0;rearmMessage='재보급 완료';rearmCompleteUntil=combatClock+4;}
 }
 function selectCombatTarget(){const w=weaponCatalog[currentWeaponKey()],air=w?.kind==='missile',forward=V(0,0,1).applyQuaternion(state.quat),pos=state.pos.clone().add(worldOffset);const candidates=combatTargets.map((t,i)=>({t,i,d:t.pos.clone().sub(pos)})).filter(o=>o.t.hp>0&&!o.t.undiscovered&&(!w||!['missile','guidedBomb','groundMissile'].includes(w.kind)||o.t.air===air)&&o.d.length()<(w?.seeker?seekerProfiles[w.seeker].range:4000)&&o.d.normalize().dot(forward)>.7);combatTarget=candidates.length?candidates[(candidates.findIndex(o=>o.i===combatTarget)+1)%candidates.length].i:-1;targetLock=0;}
 function resetCombatTargets(){for(const t of combatTargets){combatGroup.remove(t.mesh);t.mesh.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});}combatTargets.length=0;combatTarget=-1;targetLock=0;combatScore=0;
@@ -4008,7 +4022,7 @@ function addCombatEffect(p,size,explosion=false){if(combatEffects.length>=24)com
 function damageTarget(target,damage,pos){if(target.hp<=0)return;target.hp=Math.max(0,target.hp-damage);addCombatEffect(pos,target.hp===0?9:2);if(target.hp===0){if(!target.objectiveCredited){combatScore++;target.objectiveCredited=true;}target.respawnAt=target.air?combatClock+90:Infinity;target.mesh.visible=false;}}
 function fireWeapons(){const key=currentWeaponKey(),w=weaponCatalog[key];if(!packs.combat||!w||paused||state.crashed||!flightActive())return false;const guided=['missile','guidedBomb','groundMissile'].includes(w.kind);if(guided&&(targetLock<.8||!combatTargets[combatTarget]||combatTargets[combatTarget].hp<=0||combatTargets[combatTarget].air!==(w.kind==='missile')))return false;let fired=false;
  if(w.kind!=='gun'&&combatClock<weaponReleaseAt)return false;
- for(const p of partsList.filter(p=>p.type==='weapon'&&p.dims.weaponKey===key)){for(const sign of p.mirror?[1,-1]:[1]){const station=weaponStation(p,sign),remaining=weaponRounds(p,sign);if(remaining<=0||(weaponCooldown.get(station)||0)>combatClock||projectiles.length>=768)continue;weaponAmmo.set(station,remaining-1);weaponCooldown.set(station,Math.max(combatClock-1/240,weaponCooldown.get(station)||combatClock)+1/weaponFireRate(p));fired=true;combatMassDirty=true;rearmMessage='';const dir=V(0,0,1).applyQuaternion(partMountQuaternion(p,sign)).applyQuaternion(state.quat),pos=partPosition(p,sign).sub(phys.cg).applyQuaternion(state.quat).add(state.pos).add(worldOffset).addScaledVector(dir,p.dims.length*.9+.3);projectiles.push({pos,vel:state.vel.clone().addScaledVector(dir,w.speed),dir,kind:w.kind,key,target:guided?combatTarget:-1,life:w.kind==='gun'?4:w.kind==='bomb'?120:18,age:0});if(w.kind==='gun'){const impulse=dir.clone().multiplyScalar(-w.roundMass*w.speed);state.vel.addScaledVector(impulse,1/phys.totalMass);const r=partPosition(p,sign).sub(phys.cg),bodyImpulse=impulse.clone().applyQuaternion(state.quat.clone().invert());state.angVel.add(V().crossVectors(r,bodyImpulse).applyMatrix3(phys.inverseInertia));addCombatEffect(pos,.3);}if(w.kind!=='gun'){weaponReleaseAt=combatClock+.25;return true;}}
+ for(const p of partsList.filter(p=>p.type==='weapon'&&p.dims.weaponKey===key)){for(const sign of p.mirror?[1,-1]:[1]){const station=weaponStation(p,sign),remaining=weaponRounds(p,sign);if(!moduleWeaponReady(p,sign)||remaining<=0||(weaponCooldown.get(station)||0)>combatClock||projectiles.length>=768)continue;weaponAmmo.set(station,remaining-1);weaponCooldown.set(station,Math.max(combatClock-1/240,weaponCooldown.get(station)||combatClock)+1/weaponFireRate(p));fired=true;combatMassDirty=true;rearmMessage='';const dir=V(0,0,1).applyQuaternion(partMountQuaternion(p,sign)).applyQuaternion(state.quat),pos=partPosition(p,sign).sub(phys.cg).applyQuaternion(state.quat).add(state.pos).add(worldOffset).addScaledVector(dir,p.dims.length*.9+.3);projectiles.push(tagModuleShot({pos,vel:state.vel.clone().addScaledVector(dir,w.speed),dir,kind:w.kind,key,target:guided?combatTarget:-1,life:w.kind==='gun'?4:w.kind==='bomb'?120:18,age:0},p));if(w.kind==='gun'){const impulse=dir.clone().multiplyScalar(-w.roundMass*w.speed);state.vel.addScaledVector(impulse,1/phys.totalMass);const r=partPosition(p,sign).sub(phys.cg),bodyImpulse=impulse.clone().applyQuaternion(state.quat.clone().invert());state.angVel.add(V().crossVectors(r,bodyImpulse).applyMatrix3(phys.inverseInertia));addCombatEffect(pos,.3);}if(w.kind!=='gun'){weaponReleaseAt=combatClock+.25;return true;}}
  }return fired;}
 function refreshWeaponMass(){const old=phys.cg.clone();computePhysicsData();const delta=phys.cg.clone().sub(old),worldDelta=delta.clone().applyQuaternion(state.quat);state.pos.add(worldDelta);state.vel.add(V().crossVectors(state.angVel,delta).applyQuaternion(state.quat));renderPrevious.pos.add(worldDelta);renderPose.pos.add(worldDelta);for(const point of contactPoints)point.sub(delta);contactRadius+=delta.length();combatMassDirty=false;}
 function updateCombat(dt){if(!packs.combat||!flightActive()||paused||(state.crashed&&!isWeaponTrial()))return;combatClock+=dt;
@@ -4017,8 +4031,8 @@ function updateCombat(dt){if(!packs.combat||!flightActive()||paused||(state.cras
  const trigger=!!(keys.Space||combatFireHeld);if(trigger&&(turretActive||w?.kind==='gun'||!weaponTriggerDown))fireWeapons();weaponTriggerDown=trigger;if(salvoHeld)fireTurretSalvo();updateRearm(dt);
  for(let i=projectiles.length-1;i>=0;i--){const b=projectiles[i],old=b.pos.clone(),def=weaponCatalog[b.key];b.life-=dt;b.age+=dt;
  const t=combatTargets[b.target];if(b.kind==='missile'){steerSeekerMissile(b,t&&t.hp>0?t:null,dt,weaponCatalog[b.key].seeker==='radar'?activeChaff:activeFlares);}else if(t&&t.hp>0&&opticalTrackVisible(b,t,dt)){const desired=t.pos.clone().sub(b.pos).normalize();b.dir.lerp(desired,Math.min(1,dt*(b.kind==='groundMissile'?6:.9))).normalize();const speed=b.vel.length();b.vel.lerp(b.dir.clone().multiplyScalar(speed),Math.min(1,dt*(b.kind==='groundMissile'?8:2)));}
- if((b.kind==='rocket'||b.kind==='groundMissile')&&b.age<2)b.vel.addScaledVector(b.dir,65*dt);if(b.kind!=='missile')b.vel.y-=G*dt;b.pos.addScaledVector(b.vel,dt);
- let hit=false;const line=new THREE.Line3(old,b.pos);for(const target of combatTargets){if(target.hp<=0)continue;if(combatHitDistance(line,target)<target.radius+(b.kind==='missile'?6:0)){damageTarget(target,def.damage*(b.kind==='gun'&&!target.air&&!target.sam?.85:1),b.pos);if(b.kind!=='gun')addCombatEffect(b.pos,8,true);hit=true;break;}}
+ moduleBulletDrag(b,dt);if((b.kind==='rocket'||b.kind==='groundMissile')&&b.age<2)b.vel.addScaledVector(b.dir,65*dt);if(b.kind!=='missile')b.vel.y-=G*dt;b.pos.addScaledVector(b.vel,dt);
+ let hit=false;const line=new THREE.Line3(old,b.pos);for(const target of combatTargets){if(target.hp<=0)continue;if(combatHitDistance(line,target)<target.radius+(b.kind==='missile'?6:0)){if(moduleEnabled()&&target.air&&b.kind==='gun'){if(!moduleShot(target,old,b.pos,b))continue;}else damageTarget(target,def.damage*(b.kind==='gun'&&!target.air&&!target.sam?.85:1),b.pos);if(b.kind!=='gun')addCombatEffect(b.pos,8,true);hit=true;break;}}
  const ground=groundHeight(b.pos.x-worldOffset.x,b.pos.z-worldOffset.z);if(!hit&&b.pos.y<=ground){addCombatEffect(b.pos,b.kind==='gun'?1:8,b.kind!=='gun');if(b.kind!=='gun')for(const target of combatTargets)if(!target.air&&combatBlastDistance(b.pos,target)<25)damageTarget(target,def.damage*(1-combatBlastDistance(b.pos,target)/25),b.pos);hit=true;}
  if(hit||b.life<=0)projectiles.splice(i,1);
  }
@@ -4026,7 +4040,7 @@ function updateCombat(dt){if(!packs.combat||!flightActive()||paused||(state.cras
  combatMassClock+=dt;if(combatMassDirty&&combatMassClock>.2){refreshWeaponMass();combatMassClock=0;}
 }
 const combatStep=stepPhysics;stepPhysics=function(dt){combatStep(dt);updateCombat(dt);};
-const combatReset=resetFlight;resetFlight=function(){weaponAmmo.clear();weaponCooldown.clear();projectiles.length=combatEffects.length=0;combatFireHeld=false;weaponTriggerDown=false;weaponReleaseAt=0;rearmTime=0;rearmMessage='';targetLock=0;combatTarget=-1;combatClock=0;combatMassDirty=false;computePhysicsData();combatReset();if(combatGroup)resetCombatTargets();};
+const combatReset=resetFlight;resetFlight=function(){weaponAmmo.clear();weaponCooldown.clear();projectiles.length=combatEffects.length=0;combatFireHeld=false;weaponTriggerDown=false;weaponReleaseAt=0;rearmServicedStop=false;rearmTime=0;rearmMessage='';targetLock=0;combatTarget=-1;combatClock=0;combatMassDirty=false;computePhysicsData();combatReset();if(combatGroup)resetCombatTargets();};
 const weaponRebuild=rebuildAircraft;rebuildAircraft=function(){if(!flightActive())weaponAmmo.clear();weaponRebuild();};
 function updateWeaponVisuals(){for(const group of aircraftGroup.children){const part=partsList.find(p=>p.id===group.userData.partId);if(part?.type==='weapon')group.traverse(o=>{if(o.userData.expendable)o.visible=!flightActive()||weaponRounds(part,group.userData.sign??1)>0;});}}
 const weaponAero=aeroLoads;aeroLoads=function(v,omega,rho,throttle,controls,context={}){const out=weaponAero(v,omega,rho,throttle,controls,context);for(const p of partsList){if(p.type!=='weapon')continue;for(const sign of p.mirror?[1,-1]:[1]){if(weaponRounds(p,sign)<=0&&!['gun','countermeasure'].includes(weaponCatalog[p.dims.weaponKey].kind))continue;const r=partPosition(p,sign).sub(phys.cg),local=v.clone().add(V().crossVectors(omega,r)),speed=local.length();if(speed<.01)continue;const axis=V(0,0,1).applyQuaternion(partMountQuaternion(p,sign)),cos=Math.abs(local.dot(axis)/speed),area=Math.PI*p.dims.radius**2*cos+2*p.dims.radius*p.dims.length*Math.sqrt(Math.max(0,1-cos*cos)),force=local.multiplyScalar(-.5*rho*speed*area*.3);out.force.add(force);out.torque.add(V().crossVectors(r,force));out.drag+=force.length();}}return out;};
@@ -4228,8 +4242,8 @@ function toggleTurret(){if(turretActive){exitTurret();return;}if(!flightActive()
  turretPreviousCamera=cameraMode;turretActive=true;cameraMode=3;restoreTurretAim();turretFire=false;clearInput();mouseActive=lookDragging=false;activateTurretPointer();const a=aircraftAngles();turretHold={alt:state.pos.y,speed:airVelocity().length(),heading:a.heading*DEG,throttle:state.throttle};applyCameraModeFX();showToast('포탑 조준: 마우스 이동 · 사격: 왼쪽 클릭 / Space · 복귀: U');}
 function nextTurret(){if(!turretActive)return;saveTurretAim();turretIndex=(turretIndex+1)%turretStations().length;restoreTurretAim();turretFire=false;}
 function turretLineBlocked(pose){const savedPosition=aircraftGroup.position.clone(),savedRotation=aircraftGroup.quaternion.clone();try{aircraftGroup.position.copy(state.pos).sub(phys.cg.clone().applyQuaternion(state.quat));aircraftGroup.quaternion.copy(state.quat);aircraftGroup.updateMatrixWorld(true);const ray=new THREE.Raycaster(pose.breech,pose.dir,0,200),objects=[];for(const group of aircraftGroup.children){if(group.userData.partId===pose.s.p.id&&group.userData.sign===pose.s.sign)continue;group.traverse(o=>{if(o.isMesh&&o.visible&&!o.userData.collisionDecorative){let visible=true;for(let parent=o.parent;parent&&parent!==aircraftGroup;parent=parent.parent)if(!parent.visible)visible=false;if(visible)objects.push(o);}});}const sides=new Map();for(const o of objects)for(const m of Array.isArray(o.material)?o.material:[o.material])if(m&&!sides.has(m)){sides.set(m,m.side);m.side=THREE.DoubleSide;}try{return ray.intersectObjects(objects,false).length>0;}finally{for(const [m,side]of sides)m.side=side;}}finally{aircraftGroup.position.copy(savedPosition);aircraftGroup.quaternion.copy(savedRotation);aircraftGroup.updateMatrixWorld(true);}}
-function fireTurret(){if(!turretActive||paused||state.crashed||combatClock<turretLastShot)return false;const pose=turretPose(turretBarrel%2?1:-1);if(!pose)return false;const {p,sign}=pose.s,w=weaponCatalog[p.dims.weaponKey];if(weaponRounds(p,sign)<=0||projectiles.length>=768)return false;turretLastShot=Math.max(combatClock-1/240,turretLastShot)+1/weaponFireRate(p);turretBlocked=turretLineBlocked(pose);if(turretBlocked)return false;turretBarrel++;
- weaponAmmo.set(weaponStation(p,sign),weaponRounds(p,sign)-1);combatMassDirty=true;rearmMessage='';projectiles.push({pos:pose.muzzle.clone().add(worldOffset),vel:state.vel.clone().addScaledVector(pose.dir,w.speed),dir:pose.dir,key:p.dims.weaponKey,kind:'gun',target:-1,life:4,age:0});addCombatEffect(pose.muzzle.clone().add(worldOffset),.3);const impulse=pose.dir.clone().multiplyScalar(-w.roundMass*w.speed);state.vel.addScaledVector(impulse,1/phys.totalMass);const r=pose.breech.clone().sub(state.pos).applyQuaternion(state.quat.clone().invert());state.angVel.add(V().crossVectors(r,impulse.applyQuaternion(state.quat.clone().invert())).applyMatrix3(phys.inverseInertia));eventFlightSound('turret',pose.muzzle.clone().add(worldOffset));return true;}
+function fireTurret(){if(!turretActive||paused||state.crashed||combatClock<turretLastShot)return false;const pose=turretPose(turretBarrel%2?1:-1);if(!pose)return false;const {p,sign}=pose.s,w=weaponCatalog[p.dims.weaponKey];if(!moduleWeaponReady(p,sign)||weaponRounds(p,sign)<=0||projectiles.length>=768)return false;turretLastShot=Math.max(combatClock-1/240,turretLastShot)+1/weaponFireRate(p);turretBlocked=turretLineBlocked(pose);if(turretBlocked)return false;turretBarrel++;
+ weaponAmmo.set(weaponStation(p,sign),weaponRounds(p,sign)-1);combatMassDirty=true;rearmMessage='';projectiles.push(tagModuleShot({pos:pose.muzzle.clone().add(worldOffset),vel:state.vel.clone().addScaledVector(pose.dir,w.speed),dir:pose.dir,key:p.dims.weaponKey,kind:'gun',target:-1,life:4,age:0},p));addCombatEffect(pose.muzzle.clone().add(worldOffset),.3);const impulse=pose.dir.clone().multiplyScalar(-w.roundMass*w.speed);state.vel.addScaledVector(impulse,1/phys.totalMass);const r=pose.breech.clone().sub(state.pos).applyQuaternion(state.quat.clone().invert());state.angVel.add(V().crossVectors(r,impulse.applyQuaternion(state.quat.clone().invert())).applyMatrix3(phys.inverseInertia));eventFlightSound('turret',pose.muzzle.clone().add(worldOffset));return true;}
 const fixedFire=fireWeapons;fireWeapons=function(){if(turretActive)return fireTurret();if(weaponCatalog[currentWeaponKey()]?.turret)return fireTurretSalvo();return fixedFire();};
 const turretControls=effectiveControls;effectiveControls=function(){if(!turretActive||!turretHold)return turretControls();if(state.grounded)return {pitch:0,roll:0,yaw:0};const a=aircraftAngles(),wrap=x=>THREE.MathUtils.euclideanModulo(x+Math.PI,2*Math.PI)-Math.PI,headingError=wrap(turretHold.heading-(a.heading||0)*DEG),bank=clamp(headingError*.7,-.3,.3),pitch=clamp((turretHold.alt-state.pos.y)*.004-state.vel.y*.025,-.16,.18)+trimAlpha;
  return {pitch:clamp(elevatorTrim+(pitch-a.pitch*DEG)*1.8+state.angVel.x*.85,-1,1),roll:clamp(aileronTrim+(bank-(a.roll||0)*DEG)*1.5-state.angVel.z*.8,-1,1),yaw:clamp(rudderTrim+state.angVel.y*.5,-1,1)};};
@@ -4314,8 +4328,16 @@ const waterReset=resetFlight;resetFlight=function(){waterReset();waterContact=fa
 let soundContext,soundMaster,soundSources=[],soundReady=false,soundVolume=.3,soundMuted=false;
 try{const s=JSON.parse(localStorage.getItem('flightlab.sound'));soundVolume=clamp(s?.volume??.3,0,1);soundMuted=s?.muted===true;}catch(e){}
 let soundLoading;
-async function unlockFlightSound(){try{if(!soundLoading){soundLoading=(async()=>{soundContext??=new AudioContext({latencyHint:'playback'});soundMaster=soundContext.createGain();soundMaster.gain.value=0;const limiter=soundContext.createDynamicsCompressor();limiter.threshold.value=-12;limiter.ratio.value=4;soundMaster.connect(limiter);limiter.connect(soundContext.destination);for(const key of ['prop','jet']){const raw=Uint8Array.from(atob(FLIGHT_ASSETS[key].split(',')[1]),c=>c.charCodeAt(0)),decoded=await soundContext.decodeAudioData(raw.buffer),buffer=key==='prop'?recordedPropellerLoop(soundContext,decoded):seamlessEngineBuffer(decoded),node=soundContext.createBufferSource(),gain=soundContext.createGain();node.buffer=buffer;node.loop=true;gain.gain.value=0;node.connect(gain);gain.connect(soundMaster);node.start();soundSources.push({key,node,gain});}soundReady=true;})();}if(soundContext)await soundContext.resume();await soundLoading;}catch(e){soundLoading=null;if($('sound-status'))$('sound-status').textContent='사운드를 시작하지 못했습니다. 다시 클릭하세요.';}}
-function updateFlightSound(){if(!soundReady)return;const active=flightActive()&&!paused&&!document.hidden,volume=active&&!soundMuted?soundVolume:0;soundMaster.gain.setTargetAtTime(volume,soundContext.currentTime,.08);for(const s of soundSources){const matching=partsList.some(p=>p.type==='engine'&&(s.key==='prop'?p.dims.kind==='prop':p.dims.kind==='jet')),power=matching&&!state.crashed?.12+Math.pow(clamp(state.throttle,0,1),.7)*.42:0;s.gain.gain.setTargetAtTime(power*(cameraMode===2?.7:1),soundContext.currentTime,.16);s.node.playbackRate.setTargetAtTime((s.key==='prop'?.65:.72)+state.throttle*(s.key==='prop'?.6:.5),soundContext.currentTime,.35);}}
+function rocketCombustionBuffer(){
+ // Broadband combustion approximation, prepared once; no tonal pitch sweep.
+ const rate=soundContext.sampleRate,b=soundContext.createBuffer(1,rate*8,rate),a=b.getChannelData(0);
+ let rumble=0,body=0,envelope=0,seed=87131;const noise=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/2147483648-1;};
+ const low=1-Math.exp(-2*Math.PI*90/rate),mid=1-Math.exp(-2*Math.PI*1100/rate),slow=1-Math.exp(-2*Math.PI*7/rate);
+ for(let i=0;i<a.length;i++){const n=noise();rumble+=low*(n-rumble);body+=mid*(n-body);envelope+=slow*(noise()-envelope);a[i]=Math.tanh((rumble*5+body*.9+n*.10)*(1+envelope*.7))*.8;}
+ return seamlessEngineBuffer(b);
+}
+async function unlockFlightSound(){try{if(!soundLoading){soundLoading=(async()=>{soundContext??=new AudioContext({latencyHint:'playback'});soundMaster=soundContext.createGain();soundMaster.gain.value=0;const limiter=soundContext.createDynamicsCompressor();limiter.threshold.value=-12;limiter.ratio.value=4;soundMaster.connect(limiter);limiter.connect(soundContext.destination);for(const key of ['prop','jet','rocket']){let buffer;if(key==='rocket')buffer=rocketCombustionBuffer();else{const raw=Uint8Array.from(atob(FLIGHT_ASSETS[key].split(',')[1]),c=>c.charCodeAt(0)),decoded=await soundContext.decodeAudioData(raw.buffer);buffer=key==='prop'?recordedPropellerLoop(soundContext,decoded):seamlessEngineBuffer(decoded);}const node=soundContext.createBufferSource(),gain=soundContext.createGain();node.buffer=buffer;node.loop=true;gain.gain.value=0;node.connect(gain);gain.connect(soundMaster);node.start();soundSources.push({key,node,gain});}soundReady=true;})();}if(soundContext)await soundContext.resume();await soundLoading;}catch(e){soundLoading=null;if($('sound-status'))$('sound-status').textContent='사운드를 시작하지 못했습니다. 다시 클릭하세요.';}}
+function updateFlightSound(){if(!soundReady)return;const active=flightActive()&&!paused&&!document.hidden,volume=active&&!soundMuted?soundVolume:0;soundMaster.gain.setTargetAtTime(volume,soundContext.currentTime,.08);for(const s of soundSources){const matching=partsList.some(p=>p.type==='engine'&&p.dims.kind===s.key),rocket=s.key==='rocket',power=matching&&!state.crashed?(rocket?Math.pow(clamp(state.throttle,0,1),.7)*.52:.12+Math.pow(clamp(state.throttle,0,1),.7)*.42):0;s.gain.gain.setTargetAtTime(power*(cameraMode===2?.7:1),soundContext.currentTime,.16);s.node.playbackRate.setTargetAtTime(rocket?1:(s.key==='prop'?.65:.72)+state.throttle*(s.key==='prop'?.6:.5),soundContext.currentTime,.35);}}
 let radarDetail=false,cabinSystemsCanvas,cabinSystemsTexture,operationsClock=0;
 function addCockpitSystems(){
  // Keep glazing clear. Auxiliary engine/electrical instruments and radios live below the sill.
@@ -4411,6 +4433,11 @@ function stepBasicPhysics(dt){
   rates.x+=clamp(correction.x*1.4,-.75,.75)*(1-THREE.MathUtils.smoothstep(Math.abs(control.pitch),.02,.25));
   rates.z+=clamp(correction.z*1.7,-1,1)*(1-THREE.MathUtils.smoothstep(Math.abs(control.roll),.02,.25));
  }
+ if(moduleEnabled()){
+  const health=kind=>{const a=playerModules.filter(m=>m.kind===kind);return a.length?a.reduce((n,m)=>n+(['wing','htail','vtail','delta'].includes(kind)?moduleSurfaceEffect(m.hp):m.hp),0)/a.length:1;},link=health('controls');
+  rates.x*=health('htail')*link;rates.y*=health('vtail')*link;rates.z*=health('wing')*link;
+  const wings=playerModules.filter(m=>m.kind==='wing');let imbalance=0;for(const m of wings)imbalance+=m.sign*(1-moduleSurfaceEffect(m.hp));rates.z+=imbalance*.45*clamp(dynamicPressure/1500,0,2);
+ }
  // Finite angular acceleration and aerodynamic rate damping. Distributed mass
  // responds more slowly; reduced dynamic pressure and separated flow weaken control.
  const oldRate=state.angVel.clone(),length=Math.max(1,phys.fuselageDims.length);
@@ -4485,24 +4512,38 @@ function instructorOverConsole(e){
  return ray.intersectObject(planeCabin,true).some(hit=>{for(let p=hit.object;p;p=p.parent)if(!p.visible)return false;const m=hit.object.material;return !m?.transparent||m.opacity>.35;});
 }
 function instructorDemand(dt){
+ dt=clamp(dt,0,.05);
  const inverse=state.quat.clone().invert(),target=aimDirection.clone().normalize(),local=target.clone().applyQuaternion(inverse),forward=V(0,0,1).applyQuaternion(state.quat),air=airVelocity(),speed=air.length(),bodyAir=air.clone().applyQuaternion(inverse);
- const alpha=Math.atan2(-bodyAir.y,bodyAir.z),beta=Math.atan2(bodyAir.x,Math.max(1,Math.abs(bodyAir.z))),headingError=Math.atan2(forward.x*target.z-forward.z*target.x,forward.x*target.x+forward.z*target.z);
- const lowSpeed=THREE.MathUtils.smoothstep(speed,18,65),bankLimit=THREE.MathUtils.lerp(.30,1.12,lowSpeed),bank=clamp(headingError*1.65,-bankLimit,bankLimit);
- let desiredUp=V(-forward.z,0,forward.x);if(desiredUp.lengthSq()<.002)desiredUp=V(-1,0,0);desiredUp.normalize().multiplyScalar(Math.sin(bank)).add(V(0,Math.cos(bank),0));
- // Near vertical flight use the goal projected perpendicular to the nose, avoiding Euler singularities.
- if(Math.abs(forward.y)>.9){const bend=target.clone().addScaledVector(forward,-target.dot(forward));if(bend.lengthSq()>.02)desiredUp.copy(bend.normalize());}
- desiredUp.applyQuaternion(inverse);const bankError=Math.atan2(-desiredUp.x,desiredUp.y),pitchError=Math.atan2(local.y,Math.max(.08,local.z));
- const q=.5*airDensity(state.pos.y+30)*speed*speed,gain=packs.physics?clamp(Math.sqrt(1500/Math.max(250,q)),.38,1.3):1;
+ const alpha=Math.atan2(-bodyAir.y,bodyAir.z),beta=Math.atan2(bodyAir.x,Math.max(1,Math.abs(bodyAir.z)));
+ const angle=Math.acos(clamp(local.z,-1,1)),q=.5*airDensity(state.pos.y+30)*speed*speed;
+ // Aim with a small rudder correction; larger changes bank the lift vector into the turn.
+ const right=V().crossVectors(V(0,1,0),forward);
+ if(right.lengthSq()<.015)right.copy(V(1,0,0).applyQuaternion(state.quat));right.normalize();
+ const levelUp=V().crossVectors(forward,right).normalize();
+ const bend=target.clone().addScaledVector(forward,-target.dot(forward));
+ if(bend.lengthSq()>1e-9)bend.normalize();
+ const steering=bend.multiplyScalar(speed*Math.min(.55,angle*1.25));
+ const rollBlend=THREE.MathUtils.smoothstep(angle,2*DEG,12*DEG);
+ const bankLimit=THREE.MathUtils.lerp(25,78,THREE.MathUtils.smoothstep(q,300,2200))*DEG;
+ const bank=clamp(Math.atan2(-steering.dot(right),Math.max(2,G+steering.dot(levelUp))),-bankLimit,bankLimit)*rollBlend;
+ const desiredUp=levelUp.multiplyScalar(Math.cos(bank)).addScaledVector(right,-Math.sin(bank)).applyQuaternion(inverse);
+ const bankError=Math.atan2(-desiredUp.x,desiredUp.y),pitchError=Math.atan2(local.y,Math.max(.05,local.z)),yawError=Math.atan2(-local.x,Math.max(.05,local.z));
  const manualPitch=keys.KeyW||keys.KeyS||keys.ArrowUp||keys.ArrowDown||heldButtons.has('KeyW')||heldButtons.has('KeyS');
- if(packs.physics&&!manualPitch&&!state.grounded&&Math.abs(alpha)<13*DEG&&Math.abs(instructorCommand.pitch)<.95)instructorPitchIntegral=clamp(instructorPitchIntegral+pitchError*dt*.3,-.5,.5);else instructorPitchIntegral*=Math.exp(-dt*2);
- let pitch=clamp(pitchError*2.1+state.angVel.x*.85+instructorPitchIntegral,-1,1);
- // Envelope protection limits pulling into a stall, never invents lift or thrust.
- if(pitch>0)pitch*=1-THREE.MathUtils.smoothstep(alpha,13*DEG,21*DEG);
- if(pitch<0)pitch*=1-THREE.MathUtils.smoothstep(-alpha,10*DEG,18*DEG);
- const load=Number.parseFloat($('val-g').textContent)||1;if(load>5.5&&pitch>0)pitch*=clamp((7.5-load)/2,0,1);
- const demand={pitch:pitch*gain,roll:clamp(bankError*2.2-state.angVel.z*.8,-1,1)*gain,yaw:clamp(Math.atan2(-local.x,Math.max(.2,local.z))*.18-beta*.8+state.angVel.y*.65,-.45,.45)*gain};
- if(state.grounded){demand.roll=0;demand.yaw=clamp(headingError*.7+state.angVel.y*.7,-.65,.65);demand.pitch=speed<25?Math.min(0,demand.pitch):demand.pitch;}
- const blend=1-Math.exp(-Math.max(0,dt)*9);for(const axis of ['pitch','roll','yaw'])instructorCommand[axis]+=clamp((demand[axis]-instructorCommand[axis])*blend,-dt*3,dt*3);
+ // Rate feedback brakes BEFORE crossing the aim direction. Integral only supplies a small trim bias.
+ const gain=packs.physics?clamp(Math.sqrt(1500/Math.max(250,q)),.35,1.2):1;
+ if(packs.physics&&!manualPitch&&!state.grounded&&Math.abs(alpha)<12*DEG&&angle<20*DEG&&Math.abs(instructorCommand.pitch)<.8)instructorPitchIntegral=clamp(instructorPitchIntegral+pitchError*dt*.22,-.25,.25);else instructorPitchIntegral*=Math.exp(-dt*3);
+ let pitch=clamp(pitchError*2.8+state.angVel.x*1.25+instructorPitchIntegral,-1,1)*gain;
+ const predictedAlpha=alpha-state.angVel.x*.16;
+ if(pitch>0)pitch*=1-THREE.MathUtils.smoothstep(predictedAlpha,12*DEG,20*DEG);
+ if(pitch<0)pitch*=1-THREE.MathUtils.smoothstep(-predictedAlpha,10*DEG,18*DEG);
+ // Relax excess incidence rather than holding the stick neutral inside an established stall.
+ if(alpha>21*DEG)pitch=Math.min(pitch,-clamp((alpha-19*DEG)*2,0,.55));
+ if(alpha<-19*DEG)pitch=Math.max(pitch,clamp((-alpha-17*DEG)*2,0,.45));
+ const load=(window.lastSpecificForce?.y??G)/G;
+ if(load>5.5&&pitch>0)pitch*=clamp((7.5-load)/2,0,1);
+ const demand={pitch,roll:clamp(bankError*2.8-state.angVel.z*1.15,-1,1)*gain,yaw:clamp(yawError*THREE.MathUtils.lerp(.8,.16,rollBlend)-beta*.8+state.angVel.y*.75,-.5,.5)*gain};
+ if(state.grounded){demand.roll=0;demand.yaw=clamp(yawError*.7+state.angVel.y*.7,-.65,.65);demand.pitch=speed<25?Math.min(0,demand.pitch):demand.pitch;}
+ const blend=1-Math.exp(-dt*14);for(const axis of ['pitch','roll','yaw'])instructorCommand[axis]+=clamp((demand[axis]-instructorCommand[axis])*blend,-dt*5,dt*5);
  return instructorCommand;
 }
 const systemsRead=readInput;readInput=function(dt){const savedMouse=mouseActive;if(mousePilotMode==='instructor')mouseActive=false;systemsRead(dt);mouseActive=savedMouse;updateInstructorAim();if(!instructorTracking())return;const c=instructorDemand(dt),down=k=>keys[k]||heldButtons.has(k);
@@ -4601,15 +4642,28 @@ function updateDefense(dt){if(!packs.combat||!flightActive()||paused||(state.cra
  if(defenseTick<=0){defenseTick=.15;for(let i=6;i<combatTargets.length;i++){const t=combatTargets[i];if(!t.air||t.hp<=0)continue;enemyCountermeasures(t,i);const victim=enemyVictim(t,player);if(!victim)continue;const distance=t.pos.distanceTo(victim.pos);if(aiAttackEnabled&&!t.returning&&distance<3000){if(distance<700&&combatClock>=(t.nextGun||0)){t.nextGun=combatClock+.18;launchAIWeapon(t,combatEquipmentTier()>0?'cold_cannon':'ww2_mg',victim);}if(aiAttackWeapons!=='guns'&&distance>300&&combatClock>=(t.nextMissile||0)){const key=t.loadout.modern_aam>0?'modern_aam':'cold_ir';if(launchAIWeapon(t,key,victim))t.nextMissile=combatClock+10;}}}
   if(isWeaponTrial()&&aiAttackEnabled&&!state.crashed)for(const t of combatTargets.filter(t=>t.sam&&t.hp>0)){const distance=t.pos.distanceTo(player.pos);if(distance<4500&&combatClock>(t.nextMissile||0)&&hostileLOS(t.pos,player.pos)){const key=t.defenseKey||'modern_aam';if(launchAIWeapon(t,key,player))t.nextMissile=combatClock+(weaponCatalog[key].kind==='gun'?.22:18);}}
  }
- for(let i=hostileShots.length-1;i>=0;i--){const b=hostileShots[i],old=b.pos.clone();b.age+=dt;b.life-=dt;if(b.kind==='guided')steerSeekerMissile(b,b.goal||player,dt,weaponCatalog[b.key].seeker==='radar'?activeChaff:activeFlares);else b.vel.y-=G*dt;b.pos.addScaledVector(b.vel,dt);const wingHit=b.goal&&b.goal.hp>0&&new THREE.Line3(old,b.pos).closestPointToPoint(b.goal.pos,true,V()).distanceTo(b.goal.pos)<(b.goal.hitRadius||7);if(wingHit)b.goal.hp=Math.max(0,b.goal.hp-weaponCatalog[b.key].damage);const proximity=b.kind==='guided'&&new THREE.Line3(old,b.pos).closestPointToPoint(player.pos,true,V()).distanceTo(player.pos)<Math.min(12,phys.fuselageDims.length*.4+6);const impact=proximity||hitPlayerSegment(old,b.pos),terrain=b.pos.y<heightGlobal(b.pos.x,b.pos.z)-30;
-  if(impact)applyHostileDamage(weaponCatalog[b.key].damage*.42,b.pos);if(impact||wingHit||terrain||b.life<=0||(b.decoy&&b.pos.distanceTo(b.decoy.pos)<10)){if(b.kind==='guided')addCombatEffect(b.pos,5,true);hostileShots.splice(i,1);}}
+ for(let i=hostileShots.length-1;i>=0;i--){const b=hostileShots[i],old=b.pos.clone();b.age+=dt;b.life-=dt;moduleBulletDrag(b,dt);if(b.kind==='guided')steerSeekerMissile(b,b.goal||player,dt,weaponCatalog[b.key].seeker==='radar'?activeChaff:activeFlares);else b.vel.y-=G*dt;b.pos.addScaledVector(b.vel,dt);const wingHit=b.goal&&b.goal.hp>0&&new THREE.Line3(old,b.pos).closestPointToPoint(b.goal.pos,true,V()).distanceTo(b.goal.pos)<(b.goal.hitRadius||7);if(wingHit){if(moduleEnabled()){if(b.kind==='gun')moduleShot(b.goal,old,b.pos,b);else moduleBlast(b.goal,b.pos,weaponCatalog[b.key].damage);}else b.goal.hp=Math.max(0,b.goal.hp-weaponCatalog[b.key].damage);}const proximity=b.kind==='guided'&&new THREE.Line3(old,b.pos).closestPointToPoint(player.pos,true,V()).distanceTo(player.pos)<Math.min(12,phys.fuselageDims.length*.4+6);const impact=proximity||(moduleEnabled()&&b.kind==='gun'?new THREE.Line3(old,b.pos).closestPointToPoint(player.pos,true,V()).distanceTo(player.pos)<contactRadius+5:hitPlayerSegment(old,b.pos)),terrain=b.pos.y<heightGlobal(b.pos.x,b.pos.z)-30;
+  if(impact){if(moduleEnabled()&&b.kind==='gun'){if(!moduleShot(null,old,b.pos,b))continue;}else applyHostileDamage(weaponCatalog[b.key].damage*.42,b.pos);}if(impact||wingHit||terrain||b.life<=0||(b.decoy&&b.pos.distanceTo(b.decoy.pos)<10)){if(b.kind==='guided')addCombatEffect(b.pos,5,true);hostileShots.splice(i,1);}}
  updateThreatAlerts();
  updateWingmen(dt);
 };
 const campaignReset=resetFlight;resetFlight=function(){campaignReset();counterProgram=counterMouseHeld=false;activeChaff.length=0;defenseTick=0;counterPulse=0;};
 const STRIKE={x:-16000,z:24000,radius:1000},ENEMY_BASE={x:-19000,z:25000};let strikeBaseHeight=0,strikeStage='OUTBOUND',strikeLimit=Infinity,strikeFacility,wingmen=[],wingCommand='escort',campaignUiClock=0;
-const strikeTerrain=heightGlobal;heightGlobal=function(x,z){const h=strikeTerrain(x,z),r=Math.hypot(x-STRIKE.x,z-STRIKE.z),baseDistance=Math.hypot(Math.max(0,Math.abs(x-ENEMY_BASE.x)-510),Math.max(0,Math.abs(z-ENEMY_BASE.z)-1000));if(baseDistance<450)return THREE.MathUtils.lerp(strikeTerrain(ENEMY_BASE.x,ENEMY_BASE.z),h,THREE.MathUtils.smoothstep(baseDistance,0,450));if(r>1500)return h;return THREE.MathUtils.lerp(strikeBaseHeight||strikeTerrain(STRIKE.x,STRIKE.z),h,THREE.MathUtils.smoothstep(r,700,1500));};
-const strikeClear=clearAirfield;clearAirfield=function(x,z){return strikeClear(x,z)||Math.hypot(x-STRIKE.x,z-STRIKE.z)<650||(Math.abs(x-ENEMY_BASE.x)<540&&Math.abs(z-ENEMY_BASE.z)<1060);};
+// Broad, curved valley shoulders; a stable inner terrace supports the runway and facilities.
+function enemyTerrainBlend98(x,z){
+ const dx=x-ENEMY_BASE.x,dz=z-ENEMY_BASE.z,theta=Math.atan2(dz/1450,dx/800);
+ const radius=Math.hypot(dx/800,dz/1450);
+ const width=1.15+.13*Math.sin(3*theta+.7)+.09*Math.cos(5*theta-1.1);
+ const t=clamp((radius-1)/width,0,1);
+ return t*t*t*(t*(t*6-15)+10);
+}
+const strikeTerrain=heightGlobal;heightGlobal=function(x,z){
+ const h=strikeTerrain(x,z),r=Math.hypot(x-STRIKE.x,z-STRIKE.z),blend=enemyTerrainBlend98(x,z);
+ // Combine the distant objective valley first, avoiding a seam where influence areas overlap.
+ const regional=r<1500?THREE.MathUtils.lerp(strikeBaseHeight||strikeTerrain(STRIKE.x,STRIKE.z),h,THREE.MathUtils.smoothstep(r,700,1500)):h;
+ return blend<1?THREE.MathUtils.lerp(strikeTerrain(ENEMY_BASE.x,ENEMY_BASE.z),regional,blend):regional;
+};
+const strikeClear=clearAirfield;clearAirfield=function(x,z){return strikeClear(x,z)||Math.hypot(x-STRIKE.x,z-STRIKE.z)<650||(Math.hypot((x-ENEMY_BASE.x)/800,(z-ENEMY_BASE.z)/1450)<1.03);};
 function makeStrikeObject(kind,missileKey='modern_aam'){const g=new THREE.Group(),wall=cabinMaterial(0x8a8a79),dark=cabinMaterial(0x343b40),steel=cabinMaterial(0x596663,.4);const box=(x,y,z,w,h,d,m=wall)=>meshOf(new THREE.BoxGeometry(w,h,d),m,g,V(x,y,z));
  if(kind==='depot'){box(0,5,0,38,10,26);box(0,10.5,0,41,1,29,dark);for(const x of [-10,0,10]){box(x,3,13.05,7,6,.12,dark);box(x,7.5,13.1,4,1.5,.1,steel);}for(const x of [-22,22])for(const z of [-18,18]){box(x,2,z,4,4,4,steel);}g.name='Enemy logistics depot';}
  else if(kind==='fuel'){for(const x of [-12,12]){const tank=meshOf(new THREE.CylinderGeometry(7,7,10,20),steel,g,V(x,5,0));box(x,10.2,0,2,.4,2,dark);cabinTube(g,[V(x,2,8),V(x,2,14),V(0,2,14)],.25,dark);}box(0,.2,0,48,.4,25);g.name='Fuel storage';}
@@ -6149,7 +6203,7 @@ function fireWingmanWeapon(w,target,dt){
  const def=weaponCatalog[key],dir=target.pos.clone().sub(w.pos).normalize();if(!hostileLOS(w.pos,target.pos))return;
  // No magical inventory: each projectile consumes its actual carried weapon type.
  w.loadout[key]--;if(def.kind==='gun')w.loadout.gun=Math.max(0,w.loadout.gun-1);w.nextShot=combatClock+(def.kind==='gun'?1/def.rate:def.kind==='bomb'?.7:7);
- projectiles.push({serial:++missileSerial,pos:w.pos.clone(),vel:w.velocity.clone().addScaledVector(dir,def.speed),dir,key,kind:def.kind,target:['missile','guidedBomb','groundMissile'].includes(def.kind)?combatTargets.indexOf(target):-1,life:def.kind==='gun'?4:def.kind==='bomb'?120:24,age:0});eventFlightSound(def.kind==='gun'?(def.turret?'turret':def.roundMass>=.18?'cannon':'gun'):'launch',w.pos);
+ projectiles.push(tagModuleShot({serial:++missileSerial,pos:w.pos.clone(),vel:w.velocity.clone().addScaledVector(dir,def.speed),dir,key,kind:def.kind,target:['missile','guidedBomb','groundMissile'].includes(def.kind)?combatTargets.indexOf(target):-1,life:def.kind==='gun'?4:def.kind==='bomb'?120:24,age:0},null));eventFlightSound(def.kind==='gun'?(def.turret?'turret':def.roundMass>=.18?'cannon':'gun'):'launch',w.pos);
 }
 function wingmanCountermeasures(w){
  if(combatClock<(w.counterReady||0))return;const threat=hostileShots.find(b=>b.kind==='guided'&&b.goal===w&&b.pos.distanceTo(w.pos)<1000);if(!threat)return;const key=weaponCatalog[threat.key]?.seeker==='radar'?'chaff':'flare';if(!(w.loadout[key]>0))return;w.loadout[key]--;w.counterReady=combatClock+.7;const cloud={id:++flareSerial,pos:w.pos.clone(),vel:w.velocity.clone().add(V(0,-10,-15)),age:0,life:key==='chaff'?8:4};const clouds=key==='chaff'?activeChaff:activeFlares;if(clouds.length<64)clouds.push(cloud);eventFlightSound('counter',w.pos);
@@ -6167,9 +6221,9 @@ function updateTurretGroupAim(){
 }
 function fireTurretSalvo(){
  if(!flightActive()||!packs.combat||turretActive||cameraMode===2||state.crashed||paused)return false;updateTurretGroupAim();let fired=false;
- for(const s of turretStations()){const station=weaponStation(s.p,s.sign),a=turretGroupAim.get(station);if(!a?.reachable||weaponRounds(s.p,s.sign)<=0||(weaponCooldown.get(station)||0)>combatClock||projectiles.length>=768)continue;
+ for(const s of turretStations()){const station=weaponStation(s.p,s.sign),a=turretGroupAim.get(station);if(!moduleWeaponReady(s.p,s.sign)||!a?.reachable||weaponRounds(s.p,s.sign)<=0||(weaponCooldown.get(station)||0)>combatClock||projectiles.length>=768)continue;
  const pose=stationTurretPose(s,a.yaw,a.elevation,(a.barrel||0)%2?1:-1);weaponCooldown.set(station,combatClock+1/weaponFireRate(s.p));if(turretLineBlocked(pose))continue;
- const w=weaponCatalog[s.p.dims.weaponKey];a.barrel=(a.barrel||0)+1;weaponAmmo.set(station,weaponRounds(s.p,s.sign)-1);combatMassDirty=true;rearmMessage='';projectiles.push({serial:++missileSerial,pos:pose.muzzle.clone().add(worldOffset),vel:state.vel.clone().addScaledVector(pose.dir,w.speed),dir:pose.dir,key:s.p.dims.weaponKey,kind:'gun',target:-1,life:4,age:0});addCombatEffect(pose.muzzle.clone().add(worldOffset),.3);eventFlightSound('turret',pose.muzzle.clone().add(worldOffset));
+ const w=weaponCatalog[s.p.dims.weaponKey];a.barrel=(a.barrel||0)+1;weaponAmmo.set(station,weaponRounds(s.p,s.sign)-1);combatMassDirty=true;rearmMessage='';projectiles.push(tagModuleShot({serial:++missileSerial,pos:pose.muzzle.clone().add(worldOffset),vel:state.vel.clone().addScaledVector(pose.dir,w.speed),dir:pose.dir,key:s.p.dims.weaponKey,kind:'gun',target:-1,life:4,age:0},s.p));addCombatEffect(pose.muzzle.clone().add(worldOffset),.3);eventFlightSound('turret',pose.muzzle.clone().add(worldOffset));
  const impulse=pose.dir.clone().multiplyScalar(-w.roundMass*w.speed),r=pose.breech.clone().sub(state.pos).applyQuaternion(state.quat.clone().invert());state.vel.addScaledVector(impulse,1/phys.totalMass);state.angVel.add(V().crossVectors(r,impulse.applyQuaternion(state.quat.clone().invert())).applyMatrix3(phys.inverseInertia));fired=true;}
  return fired;
 }
@@ -6233,9 +6287,11 @@ try{const n=Number(localStorage.getItem('flightlab.fuelMassScale'));if(localStor
 let fuelLive=false,fuelClock=0,fuelMassClock=0,fuelFlow=0,fuelValve=true,fuelWarning='',fuelHudClock=0;
 let fuelGaugeCanvas,fuelGaugeTexture,fuelGaugeGroups=[];
 typeLabel.fuel='연료 탱크';
+function tankDimensions(p){return {width:p.dims.tankWidth??p.dims.radius*2,height:p.dims.tankHeight??p.dims.radius*2,length:p.dims.length};}
+Object.assign(uiEnglish,{'탱크 가로 · 폭 (m)':'Tank width (m)','탱크 세로 · 높이 (m)':'Tank height (m)','탱크 형상':'Tank shape','유선형':'Streamlined','육면체':'Box'});
 function tankCapacity(p){
  const d=p.dims;
- if(p.type==='fuel')return Math.PI*d.radius*d.radius*d.length*.62*800;
+ if(p.type==='fuel'){const t=tankDimensions(p);return t.width*t.height*t.length*(d.tankShape==='box'?.9:Math.PI*.62/4)*800;}
  if(p.type!=='fuselage')return 0;
  let volume=0;for(let i=0;i<24;i++){const a=bodyProfile(d,(i+.5)/24);volume+=Math.PI*d.width*d.height*a.width*a.height/4*d.length/24;}
  return volume*(d.fuelVolumeFraction??.08)*800;
@@ -6253,10 +6309,11 @@ const fuelMassFor=massFor;massFor=function(p,sign=1){
 };
 const fuelAccessory=buildAccessory;buildAccessory=function(p){
  if(p.type!=='fuel')return fuelAccessory(p);const g=new THREE.Group(),d=p.dims,paint=aircraftMaterial(),steel=aircraftMaterial('metal');
- const body=meshOf(new THREE.SphereGeometry(1,24,14),paint,g);body.scale.set(d.radius,d.radius,d.length/2);
- for(const z of [-.22,.22]){const band=meshOf(new THREE.TorusGeometry(d.radius*.93,d.radius*.018,6,24),steel,g,V(0,0,z*d.length));band.scale.y=1;}
+ const box=d.tankShape==='box',t=tankDimensions(p);
+ const body=meshOf(box?new THREE.BoxGeometry(2,2,2):new THREE.SphereGeometry(1,24,14),paint,g);body.scale.set(d.radius,d.radius,d.length/2);
+ for(const z of [-.22,.22]){if(box){for(const side of [-1,1])meshOf(new THREE.BoxGeometry(d.radius*2.015,d.radius*.035,.045),steel,g,V(0,side*d.radius,z*d.length));}else meshOf(new THREE.TorusGeometry(d.radius*.93,d.radius*.018,6,24),steel,g,V(0,0,z*d.length));}
  if(d.tankKind==='drop'){meshOf(new THREE.BoxGeometry(d.radius*.25,d.radius*.75,d.length*.32),steel,g,V(0,d.radius*.95,0));for(const x of [-1,1])meshOf(new THREE.BoxGeometry(d.radius*.6,.018,d.length*.12),paint,g,V(x*d.radius*.8,0,-d.length*.36));}
- g.name=d.tankKind==='drop'?'Jettisonable external fuel tank':'Auxiliary fuel tank';return g;
+ g.scale.set(t.width/(2*d.radius),t.height/(2*d.radius),1);g.name=d.tankKind==='drop'?'Jettisonable external fuel tank':'Auxiliary fuel tank';const mount=new THREE.Group();mount.add(g);return mount;
 };
 const fuelEditor=renderEditor;renderEditor=function(){fuelEditor();const p=partsList.find(p=>p.id===selectedPartId);if(!p)return;const box=$('part-editor');
  if(p.type==='fuselage')box.append(sliderField('내장 탱크 · 동체 체적 비율',p.dims.fuelVolumeFraction??.08,0,.35,.01,v=>p.dims.fuelVolumeFraction=v));
@@ -6264,13 +6321,13 @@ const fuelEditor=renderEditor;renderEditor=function(){fuelEditor();const p=parts
  if(p.type==='fuel'||p.type==='fuselage'){box.append(sliderField('출격·재급유 탑재량 (%)',p.dims.fillPercent??100,0,100,1,v=>p.dims.fillPercent=v,0));const note=document.createElement('p');note.id='tank-capacity-note';box.append(note);updateTankCapacityNote();}
  if(p.type==='engine')box.append(sliderField('연료 소모 배율',p.dims.fuelConsumption??1,.4,2,.05,v=>p.dims.fuelConsumption=v));
 };
-const fuelValidate=validatedDesign;validatedDesign=function(data){const clean=fuelValidate(data);for(let i=0;i<clean.parts.length;i++){const p=clean.parts[i],d=data.parts[i].dims||{};for(const [k,lo,hi,fallback]of [['fuelVolumeFraction',0,.35,.08],['fillPercent',0,100,100],['fuelConsumption',.4,2,1]])if((k==='fuelConsumption'&&p.type==='engine')||(k!=='fuelConsumption'&&['fuel','fuselage'].includes(p.type))){const n=d[k]??fallback;if(!Number.isFinite(n)||n<lo||n>hi)throw Error('연료 설정 범위 오류');p.dims[k]=n;}}return clean;};
+const fuelValidate=validatedDesign;validatedDesign=function(data){const clean=fuelValidate(data);for(let i=0;i<clean.parts.length;i++){const p=clean.parts[i],d=data.parts[i].dims||{};for(const [k,lo,hi,fallback]of [['fuelVolumeFraction',0,.35,.08],['fillPercent',0,100,100],['fuelConsumption',.4,2,1]])if((k==='fuelConsumption'&&p.type==='engine')||(k!=='fuelConsumption'&&['fuel','fuselage'].includes(p.type))){const n=d[k]??fallback;if(!Number.isFinite(n)||n<lo||n>hi)throw Error('연료 설정 범위 오류');p.dims[k]=n;}if(p.type==='fuel'){for(const k of ['tankWidth','tankHeight']){const n=d[k]??p.dims.radius*2;if(!Number.isFinite(n)||n<.08||n>16)throw Error('탱크 치수 범위 오류');p.dims[k]=n;}const shape=d.tankShape??'streamlined';if(!['streamlined','box'].includes(shape))throw Error('탱크 형상 오류');p.dims.tankShape=shape;}}return clean;};
 const fuelResetFlight=resetFlight;resetFlight=function(){resetFuel();fuelResetFlight();};
 const fuelRebuild=rebuildAircraft;rebuildAircraft=function(){if(inBuilder||menuVisible)fuelLive=false;fuelRebuild();updateTankCapacityNote();};
-const fuelAero=aeroLoads;aeroLoads=function(v,w,rho,throttle,c,context={}){const out=fuelAero(v,w,rho,throttle,c,context),speed=v.length();if(speed>1)for(const p of partsList)if(p.type==='fuel'&&p.dims.tankKind==='drop')for(const sign of p.mirror?[1,-1]:[1]){if(droppedTanks.has(fuelKey(p,sign)))continue;const drag=.5*rho*speed*speed*(Math.PI*p.dims.radius**2*.12+p.dims.length*p.dims.radius*.012),f=v.clone().multiplyScalar(-drag/speed);out.force.add(f);out.torque.add(V().crossVectors(partPosition(p,sign).sub(phys.cg),f));out.drag+=drag;}return out;};
+const fuelAero=aeroLoads;aeroLoads=function(v,w,rho,throttle,c,context={}){const out=fuelAero(v,w,rho,throttle,c,context),speed=v.length();if(speed>1)for(const p of partsList)if(p.type==='fuel'&&p.dims.tankKind==='drop')for(const sign of p.mirror?[1,-1]:[1]){if(droppedTanks.has(fuelKey(p,sign)))continue;const t=tankDimensions(p),box=p.dims.tankShape==='box',drag=.5*rho*speed*speed*(t.width*t.height*(box?1.05:Math.PI*.12/4)+t.length*(t.width+t.height)*.003),f=v.clone().multiplyScalar(-drag/speed);out.force.add(f);out.torque.add(V().crossVectors(partPosition(p,sign).sub(phys.cg),f));out.drag+=drag;}return out;};
 function consumeFuel(dt){
  fuelClock+=dt;if(fuelClock<.05)return;const step=fuelClock;fuelClock=0;let flow=0;
- if(fuelValve&&fuelSummary().mass>0){const rho=airDensity(state.pos.y+30);for(const e of phys.engines){const part=partsList.find(p=>p.id===e.partId),mult=part?.dims.fuelConsumption??1,t=state.throttle;
+ if(fuelValve&&fuelSummary().mass>0){const rho=airDensity(state.pos.y+30);for(const e of phys.engines){const part=partsList.find(p=>p.id===e.partId),mult=part?.dims.fuelConsumption??1,t=engineFuelThrottle(e,state.throttle);
   if(e.kind==='prop'){const a=Math.PI*(e.propDiameter/2)**2,rated=e.thrustN*Math.sqrt(e.thrustN/(2*1.225*a))/.82;flow+=rated/1000*.28/3600*(.04+.96*t)*Math.pow(Math.max(.01,rho/1.225),.8)*mult;}
   else if(e.kind==='rocket')flow+=e.thrustN*t/(250*G)*mult;
   else flow+=e.thrustN*.000022*(.035+.965*t)*Math.pow(Math.max(.01,rho/1.225),.7)*mult;
@@ -6391,6 +6448,7 @@ function fuelInstrument(parent,x,y,w){
  meshOf(new THREE.PlaneGeometry(w,w*.5),new THREE.MeshBasicMaterial({map:fuelGaugeTexture,toneMapped:false}),g,V(0,0,.013));g.traverse(o=>o.layers.set(2));return g;
 }
 function setupFuelCabinRevision(){
+ $('help-dialog').insertAdjacentHTML('beforeend','<h3>연료탱크 치수·로켓 사운드</h3><p>탱크의 폭·높이·길이를 각각 조절하고 유선형 또는 육면체 형상을 선택할 수 있습니다. 치수와 형상은 용량, 연료 무게와 관성에 반영됩니다. 외부 드롭탱크는 치수·형상에 따라 항력도 변합니다. 용량은 형상별 내부 유효 체적의 근사치입니다. 기존 설계의 반경은 폭·높이로 자동 변환됩니다.</p><p>로켓 엔진은 추력에 연동되는 합성 연소음을 사용합니다. 특정 실물 엔진의 녹음은 아니며, 추력 0·연료 차단·기체 손실 시 꺼집니다. 콕핏에서는 외부보다 감쇠·필터링된 소리가 들립니다.</p>');
  const setting=document.createElement('div');setting.id='fuel-mass-setting';setting.append(sliderField('연료 무게 반영 비율 · 1.00 = 실제 질량',fuelMassScale,.25,1,.05,v=>{fuelMassScale=v;try{localStorage.setItem('flightlab.fuelMassScale',v);}catch(e){};updateTankCapacityNote();}));
  const hint=document.createElement('p');hint.className='hint';hint.textContent='기본 0.60. 용량·소모량은 유지하고 연료가 질량·무게중심·관성에 미치는 영향만 조절합니다.';setting.append(hint);($('weather-mode').closest('label').parentElement).append(setting);
  const lower=servicePanel(fighterInterior,0,-1.035,-1.31,.34,.36,'FUEL / SERVICES',-16*DEG);
@@ -6653,7 +6711,36 @@ computePhysicsData=function(){
 };
 
 </script>
-<script>// Graphics failure isolation: keep simulation state, stop blind flight, recover the same context.
+<script>
+function mountDisplayVideo(){for(const [mesh,z]of [[weaponVideoScreen,.001],[weaponVideoReticle,.002]]){weaponCRT.add(mesh);mesh.position.set(0,.025,z);mesh.rotation.set(0,0,0);mesh.scale.set(1,1,1);mesh.material.depthTest=true;mesh.material.depthWrite=false;mesh.material.polygonOffset=true;mesh.material.polygonOffsetFactor=-1;mesh.material.polygonOffsetUnits=-1;}weaponVideoScreen.renderOrder=31;weaponVideoReticle.renderOrder=32;}
+let damageDiagramClock=0,airframeHullCache=null,hud91Clock=0;
+function hull91(points){points.sort((a,b)=>a.x-b.x||a.y-b.y);const cross=(a,b,c)=>(b.x-a.x)*(c.y-a.y)-(b.y-a.y)*(c.x-a.x),lo=[],hi=[];for(const p of points){while(lo.length>1&&cross(lo.at(-2),lo.at(-1),p)<=0)lo.pop();lo.push(p);}for(const p of points.slice().reverse()){while(hi.length>1&&cross(hi.at(-2),hi.at(-1),p)<=0)hi.pop();hi.push(p);}return lo.slice(0,-1).concat(hi.slice(0,-1));}
+function buildAirframeHull91(){aircraftGroup.updateMatrixWorld(true);const inverse=aircraftGroup.matrixWorld.clone().invert(),shapes=[];for(const group of aircraftGroup.children){const id=group.userData.partId;if(!id)continue;group.traverse(o=>{const a=o.geometry?.attributes?.position;if(!o.isMesh||!a||o.userData.collisionDecorative)return;let visible=true;for(let x=o;x&&x!==aircraftGroup;x=x.parent)if(!x.visible)visible=false;if(!visible)return;const mat=inverse.clone().multiply(o.matrixWorld),points=[],step=Math.max(1,Math.ceil(a.count/1200));for(let i=0;i<a.count;i+=step){const v=V().fromBufferAttribute(a,i).applyMatrix4(mat);points.push({x:v.x,y:-v.z});}if(points.length>2)shapes.push({id,sign:group.userData.sign,hull:hull91(points),type:partsList.find(p=>p.id===id)?.type});});}return {group:aircraftGroup,gear:gearDeployment>.5,shapes};}
+function drawDamageDiagram(){const box=$('damage-airframe-box');if(!box)return;box.hidden=!flightActive()||!moduleEnabled();if(box.hidden)return;if(!airframeHullCache||airframeHullCache.group!==aircraftGroup||airframeHullCache.gear!==(gearDeployment>.5))airframeHullCache=buildAirframeHull91();const c=$('damage-airframe').getContext('2d');c.clearRect(0,0,440,360);const shapes=airframeHullCache.shapes,all=shapes.flatMap(s=>s.hull);if(!all.length)return;const minX=Math.min(...all.map(p=>p.x)),maxX=Math.max(...all.map(p=>p.x)),minY=Math.min(...all.map(p=>p.y)),maxY=Math.max(...all.map(p=>p.y)),scale=Math.min(390/Math.max(.1,maxX-minX),300/Math.max(.1,maxY-minY));c.save();c.translate(220,180);c.scale(scale,scale);c.translate(-(maxX+minX)/2,-(maxY+minY)/2);for(const s of shapes){const m=playerModules.find(m=>m.part?.id===s.id&&m.sign===s.sign),hp=m?.hp??1;if(m?.kind==='tank'&&droppedTanks.has(fuelKey(m.part,m.sign)))continue;c.fillStyle=hp>.7?'#8d999f':hp>.3?'#dec147':hp>0?'#dc553f':'#29292a';c.strokeStyle=m?.fire?'#ff762a':'#60676b';c.lineWidth=.65/scale;c.beginPath();s.hull.forEach((p,i)=>i?c.lineTo(p.x,p.y):c.moveTo(p.x,p.y));c.closePath();c.fill();c.stroke();}for(const m of playerModules.filter(m=>['crew','controls','tank'].includes(m.kind)&&m.hp<.98)){c.fillStyle=m.fire?'#ff7529':m.leak?'#7dc5df':m.hp>.3?'#ead34c':'#e34d3b';const p=m.center.clone().add(phys.cg);c.fillRect(p.x-2/scale,-p.z-4/scale,4/scale,8/scale);}c.restore();}
+const hud91ModuleUpdate=updateModuleSystem;updateModuleSystem=function(dt){hud91ModuleUpdate(dt);damageDiagramClock+=dt;hud91Clock+=dt;if(damageDiagramClock>.1){damageDiagramClock=0;drawDamageDiagram();}if(hud91Clock<.1)return;hud91Clock=0;const box=$('combat-flight-data');if(!box||!flightActive())return;const speed=airVelocity().length(),alt=state.pos.y+30,ias=speed*Math.sqrt(airDensity(alt)/1.225),sound=Math.sqrt(1.4*287.05*Math.max(216.65,288.15-.0065*Math.max(0,alt))),key=currentWeaponKey();
+const rows=[['','THR',Math.round(state.throttle*100)+' %',''],['','IAS',Math.round(ias*3.6)+' km/h',''],['','SPD',Math.round(state.vel.length()*3.6)+' km/h',''],['','MACH',(speed/sound).toFixed(2),''],['','ALT',Math.round(alt)+' m','']];
+if(packs.combat){for(const k of weaponTypes()){const w=weaponCatalog[k],ps=partsList.filter(p=>p.type==='weapon'&&p.dims.weaponKey===k),n=ps.reduce((s,p)=>s+weaponTotal(p),0),label=w.turret?'TUR':({gun:w.roundMass<.18?'MG':'CNN',bomb:'BMB',guidedBomb:'GBU',missile:'AAM',groundMissile:'AGM',rocket:'RKT'}[w.kind]||'WPN'),detail=w.kind==='missile'?(w.seeker==='radar'?'RADAR':'IR'):w.kind==='gun'&&moduleEnabled()?[...new Set(ps.map(p=>gunSpec(p).type))].join('/'):w.kind==='guidedBomb'?'GUIDED':w.kind==='groundMissile'?'EO':'';rows.push([k===key?'>':'',label,Math.floor(n),detail]);}if(partsList.some(p=>p.type==='weapon'&&p.dims.weaponKey==='flare_pod'))rows.push(['','FLR',flareCount(),'']);if(partsList.some(p=>p.type==='weapon'&&p.dims.weaponKey==='chaff_pod'))rows.push(['','CHFF',counterCount('chaff_pod'),'']);}
+if(mousePilotMode==='instructor')rows.push(['','INSTRUCTOR','','']);
+box.replaceChildren();for(const [mark,name,value,detail]of rows){const row=document.createElement('div');row.className=name==='INSTRUCTOR'?'hud-mode':'';for(const t of [mark,name,value,detail]){const span=document.createElement('span');span.textContent=t;row.append(span);}box.append(row);}}
+
+function setupHud90(){mountDisplayVideo();const hud=$('hud');const missionStack=document.createElement('div');missionStack.id='mission-stack';hud.append(missionStack);missionStack.append($('hud-mission'),$('mission-navigation'));$('hud90-toggle')?.remove();$('map-zoom-button').hidden=true;const nav=$('basic-navigation');hud.append(nav);const box=document.createElement('div');box.id='damage-airframe-box';box.hidden=true;box.innerHTML='<canvas id="damage-airframe" width="440" height="360" aria-label="부위별 기체 손상"></canvas>';hud.append(box);const data=document.createElement('div');data.id='combat-flight-data';hud.append(data);const toggle=$('flight-panel-toggle');hud.append(toggle);document.body.classList.add('flight-panel-folded');toggle.textContent='조작';toggle.onclick=()=>{const folded=document.body.classList.toggle('flight-panel-folded');toggle.textContent=folded?'조작':'닫기';};
+const css=document.createElement('style');css.textContent=`
+#hud-speed,#hud-alt,#hud-attitude,#hud-throttle,#hud-controls,#module-panel,#hud90-toggle,#map-zoom-button,#tactical-flight,#tactical-stores,#defense-status,#tactical-heading{display:none!important}
+#combat-flight-data{position:fixed;top:22px;left:8px;color:#e8edf0;font:14px/1.3 monospace;letter-spacing:.3px;text-shadow:1px 1px 2px #253342;pointer-events:none;z-index:21}#combat-flight-data>div{display:grid;grid-template-columns:16px 62px 93px auto;column-gap:5px;white-space:nowrap}#combat-flight-data>div:nth-child(6){margin-top:9px}#combat-flight-data .hud-mode{opacity:.55;margin-top:5px}#combat-flight-data .hud-mode span:nth-child(2){grid-column:2/5}
+
+#damage-airframe-box{position:fixed!important;left:18px!important;bottom:18px!important;top:auto!important;right:auto!important;width:min(210px,30vw);height:172px;background:none!important;transform:none!important;pointer-events:none;z-index:21}#damage-airframe-box[hidden]{display:none!important}#damage-airframe{width:100%;height:100%}
+#basic-navigation{position:fixed!important;right:18px!important;bottom:18px!important;left:auto!important;top:auto!important;width:min(220px,30vw)!important;max-height:none!important;transform:none!important;margin:0!important;padding:0!important;box-sizing:border-box;background:#15231c99!important;border:1px solid #9aa6a366!important;border-radius:0!important;z-index:22}#basic-navigation canvas{display:block!important;width:100%!important;height:auto!important;margin:0!important}#target-location{display:none!important}#basic-navigation summary,#basic-navigation h3,#basic-navigation p,#basic-navigation small{display:none!important}
+#hud #flight-panel-toggle{position:fixed!important;right:18px!important;top:16px!important;left:auto!important;bottom:auto!important;width:64px!important;height:29px!important;padding:0!important;background:#17232b99!important;color:#eee;border:1px solid #a3adb077!important;border-radius:2px!important;z-index:130;pointer-events:auto!important;display:block!important}
+#flight-panel{position:fixed!important;right:18px!important;top:54px!important;bottom:auto!important;left:auto!important;width:270px!important;max-height:calc(100dvh - 310px)!important;overflow:auto!important;transform:none!important;background:#111d26eb!important;border-radius:3px!important}body.flight-panel-folded #flight-panel{display:none!important}
+#mission-stack{position:fixed;top:16px;left:50%;transform:translateX(-50%);width:min(360px,38vw);display:flex;flex-direction:column;gap:6px;text-align:center;z-index:22;pointer-events:none;max-height:calc(100dvh - 180px);overflow:auto}
+#mission-stack #hud-mission,#mission-stack #mission-navigation{position:static!important;inset:auto!important;transform:none!important;width:100%!important;min-width:0!important;max-width:none!important;height:auto!important;margin:0!important;box-sizing:border-box;background:transparent!important;border:0!important;box-shadow:none!important;text-shadow:1px 1px 2px #000}
+#mission-stack #mission-guidance,#mission-stack #mission-text,#mission-stack #mission-time{position:static!important;float:none!important;height:auto!important;white-space:normal!important;overflow-wrap:anywhere;line-height:1.5;padding:2px 6px;margin:0}
+#mission-stack #route-map{max-width:100%;height:auto}#mission-stack button{pointer-events:auto}
+#threat-alert{position:fixed!important;left:50%!important;top:120px!important;transform:translateX(-50%)!important;width:290px;background:#351515a0!important}#world-status{position:fixed!important;left:22px!important;top:270px!important;background:transparent!important}
+@media(max-height:650px){#damage-airframe-box{height:130px;width:160px}#basic-navigation{width:170px!important}#flight-panel{max-height:calc(100dvh - 250px)!important}#combat-flight-data{font-size:12px}}
+`;document.head.append(css);$('help-dialog').insertAdjacentHTML('beforeend','<h3>전투 화면</h3><p>좌상단: 추력·속도·고도·장착 무장/잔탄 (선택: >)·대응장비·마하 수. 좌하단: 실제 제작 부품을 투영한 손상 기체. 우하단: 지도. 지도 확대는 M키로 합니다. 우상단 조작 버튼은 하나이며 기본적으로 접혀 있습니다. 기체 손상은 회색·노랑·빨강·검정으로 나타납니다. 지면 충돌은 여전히 전체 기체 판정입니다.</p>');}
+
+// Graphics failure isolation: keep simulation state, stop blind flight, recover the same context.
 const graphicsHealth={lost:false,blocked:false,safe:false,ready:false,stage:'startup',events:[],restores:0,wasPaused:false,notice:null,lastCamera:null,lastSample:0};
 try{graphicsHealth.safe=localStorage.getItem('flightlab.graphicsSafe')==='1';}catch(e){}
 function rememberGraphicsEvent(kind,detail=''){
@@ -6675,7 +6762,7 @@ function graphicsFault(kind,error){
  if(typeof soundMaster!=='undefined'&&soundMaster&&soundContext)soundMaster.gain.setValueAtTime(0,soundContext.currentTime);
  graphicsNotice(kind==='context-lost'?'3D 그래픽 연결이 끊겨 비행을 일시정지했습니다. 기체·임무 상태를 유지하며 복구를 기다립니다.':'화면 처리 오류로 비행을 일시정지했습니다. 저부하 복구를 시도하거나 진단 파일을 저장하세요.');
 }
-function graphicsPixelRatio(){const safe=graphicsHealth.safe,budget=safe?1000000:quality==='low'?1200000:2400000;return Math.min(devicePixelRatio||1,safe?1:quality==='low'?.85:1.25,Math.sqrt(budget/Math.max(1,innerWidth*innerHeight)));}
+function graphicsPixelRatio(){const safe=graphicsHealth.safe,budget=safe?1000000:quality==='low'?1200000:4200000;return Math.min(devicePixelRatio||1,safe?1:quality==='low'?.85:1.25,Math.sqrt(budget/Math.max(1,innerWidth*innerHeight)));}
 function applyGraphicsBudget(){
  if(!renderer||graphicsHealth.lost)return;renderer.setPixelRatio(graphicsPixelRatio());renderer.setSize(innerWidth,innerHeight);renderer.shadowMap.enabled=!graphicsHealth.safe&&quality!=='low';
  if(graphicsHealth.safe){scene.environment=null;if(flightEnvironmentOriginal)flightEnvironmentOriginal.environment=null;const photo=scene.userData.photoSky;scene.userData.photoSky=null;photo?.dispose();if(flightEnvironmentOriginal?.background?.isTexture)flightEnvironmentOriginal.background=null;const old=environmentTarget;environmentTarget=null;old?.dispose();if(scene.background?.isTexture)scene.background=new THREE.Color(flightHour===0?0x030912:0x9eb4c4);scene.traverse(o=>{if(o.shadow){o.shadow.map?.dispose();o.shadow.map=null;o.shadow.mapPass?.dispose();o.shadow.mapPass=null;}});}
@@ -6683,6 +6770,8 @@ function applyGraphicsBudget(){
 }
 function resetGraphicsPass(){
  renderer.setRenderTarget(null);renderer.setScissorTest(false);renderer.setViewport(0,0,innerWidth,innerHeight);renderer.autoClear=true;renderer.autoClearColor=true;renderer.autoClearDepth=true;renderer.autoClearStencil=true;camera.layers.set(0);
+ // Preserve the terrain bombing aid after resetting offscreen render state.
+ if(bombGroundMark?.group.visible&&flightActive()&&packs.combat&&!turretActive&&bombReleaseAttitudeValid()&&nextBombStation())camera.layers.enable(4);
 }
 function recoverGraphics(safe=true){
  if(graphicsHealth.lost){graphicsNotice('그래픽 장치가 아직 복구되지 않았습니다. 잠시 기다린 후 브라우저의 다른 3D 탭을 닫아 주세요.');return;}
@@ -6708,11 +6797,56 @@ function installGraphicsEvents(){
 function setupGraphicsSafety(){
  const css=document.createElement('style');css.textContent='#graphics-recovery{position:fixed;z-index:100000;top:18%;left:50%;transform:translateX(-50%);box-sizing:border-box;width:min(540px,94vw);padding:22px;background:#13222ef5;border:1px solid #d9a86a;border-radius:12px;color:#eef3f7;box-shadow:0 12px 60px #000b;font:15px/1.6 FlightUI,sans-serif}#graphics-recovery[hidden]{display:none}#graphics-recovery strong{font-size:20px}#graphics-recovery div{display:grid;grid-template-columns:1fr 1fr;gap:8px}#graphics-recovery button{padding:10px;background:#253e50;color:white;border:1px solid #7190a4;border-radius:5px;cursor:pointer}#graphics-recovery button:disabled{opacity:.45}#graphics-repair{width:100%}';document.head.append(css);
  const qualityBox=$('quality-select')?.parentElement;if(qualityBox){const label=document.createElement('label');label.innerHTML='<input type="checkbox" id="graphics-safe"> 그래픽 안정성 모드';qualityBox.after(label);$('graphics-safe').checked=graphicsHealth.safe;$('graphics-safe').onchange=e=>{graphicsHealth.safe=e.target.checked;try{localStorage.setItem('flightlab.graphicsSafe',graphicsHealth.safe?'1':'0');}catch(e){}if(!graphicsHealth.safe)setupEnvironment();setFlightLighting();applyGraphicsBudget();};const report=document.createElement('button');report.textContent='그래픽 진단 저장';report.onclick=()=>graphicsDownload('flight_graphics_diagnostic.json',graphicsReport());label.after(report);}
- const button=document.createElement('button');button.id='graphics-repair';button.textContent='화면 복구';button.onclick=()=>{graphicsHealth.wasPaused=paused;graphicsFault('manual-recovery','사용자가 화면 소실 신고');recoverGraphics(true);};$('flight-panel').append(button);
+ const button=document.createElement('button');button.id='graphics-repair';button.textContent='화면 복구';button.onclick=()=>{graphicsHealth.wasPaused=paused;graphicsFault('manual-recovery','사용자가 화면 소실 신고');recoverGraphics(true);};const footer=$('flight-reset-footer');footer.insertBefore(button,$('back-to-menu'));
+ const layout=document.createElement('style');layout.textContent='#flight-reset-footer{display:flex;flex-direction:column;gap:8px;flex-shrink:0}#flight-reset-footer>button{position:static!important;inset:auto!important;transform:none!important;float:none!important;box-sizing:border-box;width:100%!important;margin:0!important;flex-shrink:0}#flight-reset-footer #back-to-menu{margin-top:0!important}';document.head.append(layout);
  $('quality-select')?.addEventListener('change',applyGraphicsBudget);window.addEventListener('resize',applyGraphicsBudget);applyGraphicsBudget();graphicsHealth.ready=true;
  $('help-dialog').insertAdjacentHTML('beforeend','<h3>화면이 하얗거나 검게 변할 때</h3><p>조작 패널의 화면 복구를 누르면 비행을 멈추고 그림자·HDR 반사를 끈 저부하 모드로 복구합니다. WebGL 연결 손실은 자동 감지하며 복구 후에도 직접 계속하기 전까지 일시정지합니다. 시작 메뉴의 그래픽 안정성 모드는 다음 실행에도 유지됩니다. 반복될 경우 그래픽 진단 파일을 저장하세요. 진단에는 브라우저·GPU 정보와 오류 기록이 포함되며 자동 전송하지 않습니다. 드라이버가 응답하지 않으면 페이지 자체만으로 복구할 수 없습니다.</p>');
 }
 const graphicsLighting=setFlightLighting;setFlightLighting=function(){graphicsLighting();if(graphicsHealth.safe){scene.environment=null;if(scene.background?.isTexture)scene.background=new THREE.Color(flightHour===0?0x030912:0x9eb4c4);}};
+
+// Optional, bounded game damage model. Units: m, kg, seconds, armor mm.
+// Ellipsoid module volumes and empirical penetration are approximations, not certified ballistics.
+packs.modules=false;try{packs.modules=JSON.parse(localStorage.getItem('flightlab.packs'))?.modules===true;}catch(e){}
+packNames.modules='모듈 손상 · 탄종 / 장갑 팩';
+const moduleAmmo={AP:{name:'철갑탄 AP',pen:1,blast:0,fire:0},API:{name:'철갑소이탄 API',pen:.85,blast:0,fire:.45},HEI:{name:'고폭소이탄 HEI',pen:.18,blast:1,fire:.65},T:{name:'예광탄 T',pen:.65,blast:0,fire:.1}};
+let playerModules=[],moduleNotice='',moduleNoticeUntil=0,moduleTick=0;
+const moduleEnabled=()=>packs.modules&&packs.combat;
+function moduleWeaponReady(p,sign){return !moduleEnabled()||!playerModules.some(m=>m.part?.id===p.id&&m.sign===sign&&m.hp<.1);}
+function gunSpec(p,key=p?.dims.weaponKey){if(!p&&key&&moduleEnabled())p=partsList.find(p=>p.type==='weapon'&&p.dims.weaponKey===key);const w=weaponCatalog[key],cal=p?.dims.caliberMM??(key==='ww2_mg'||w?.turret?12.7:20),barrel=p?.dims.barrelM??(cal<20?.9:1.4),type=p?.dims.ammoType??'AP';return {cal,barrel,type:cal<20&&type==='HEI'?'API':type,speed:(w?.speed||650)*clamp(Math.sqrt(barrel/(cal<20?.9:1.4)),.75,1.2),mass:.046*(cal/12.7)**3};}
+function moduleRecord(id,kind,center,size,armor=0,material='steel',part=null,sign=1,q=new THREE.Quaternion()){return {id,kind,center,size,armor,material,part,sign,q,hp:1,fire:0,leak:0};}
+function resetPlayerModules(){playerModules=[];moduleNotice='';for(const i of buildInstances()){const p=i.part,d=p.dims,surf=surfaceTypes.includes(p.type),size=surf?V(d.span/2,Math.max(.06,d.rootChord*(d.rootThickness??d.thickness)/2),(d.rootChord+d.tipChord)/4):V((d.tankWidth??d.width??d.radius*2)/2,(d.tankHeight??d.height??d.radius*2)/2,(d.length||1)/2),q=surf?new THREE.Quaternion().setFromRotationMatrix(i.mat):partMountQuaternion(p,i.sign),kind=p.type==='cockpit'?'crew':p.type==='fuel'?'tank':p.type;const m=moduleRecord(p.id+':'+i.sign,kind,i.centroid.clone().sub(phys.cg),size,d.armorMM??0,d.armorMaterial??'steel',p,i.sign,q);playerModules.push(m);if(p.type==='fuselage'){if(tankCapacity(p)>0)playerModules.push(moduleRecord(m.id+':fuel','tank',m.center.clone(),size.clone().multiplyScalar(.45),0,'aluminum',p,i.sign,q));playerModules.push(moduleRecord(m.id+':control','controls',m.center.clone().add(V(0,-size.y*.2,0)),V(.08,.08,size.z*.65),0,'aluminum',p,i.sign,q));}}
+ if(!playerModules.some(m=>m.kind==='crew'))playerModules.push(moduleRecord('pilot','crew',V(0,.2,1),V(.3,.45,.3)));
+}
+function aiModules(t){if(!t.modules||t.moduleDead&&t.hp>0){t.moduleDead=false;t.modules=[moduleRecord('body','fuselage',V(),V(.7,.7,4)),moduleRecord('engine','engine',V(0,0,-1.6),V(.5,.5,1.1),4),moduleRecord('pilot','crew',V(0,.5,1.3),V(.32,.4,.45),6),moduleRecord('fuel','tank',V(0,0,.3),V(.5,.5,.9)),moduleRecord('left','wing',V(-2.5,0,0),V(2,.12,.9)),moduleRecord('right','wing',V(2.5,0,0),V(2,.12,.9)),moduleRecord('tail','htail',V(0,0,-3),V(1.5,.12,.6)),moduleRecord('controls','controls',V(0,-.3,-1),V(.1,.1,2))];}return t.modules;}
+function moduleFrame(t){return t?{pos:t.pos,q:t.mesh.quaternion.clone()}:{pos:state.pos.clone().add(worldOffset),q:state.quat};}
+function intersectModule(a,b,m){const inv=m.q.clone().invert(),o=a.clone().sub(m.center).applyQuaternion(inv),d=b.clone().sub(a).applyQuaternion(inv),s=m.size,A=d.x*d.x/(s.x*s.x)+d.y*d.y/(s.y*s.y)+d.z*d.z/(s.z*s.z),B=2*(o.x*d.x/(s.x*s.x)+o.y*d.y/(s.y*s.y)+o.z*d.z/(s.z*s.z)),C=o.x*o.x/(s.x*s.x)+o.y*o.y/(s.y*s.y)+o.z*o.z/(s.z*s.z)-1,D=B*B-4*A*C;if(A<1e-12||D<0)return null;const enter=(-B-Math.sqrt(D))/(2*A),exit=(-B+Math.sqrt(D))/(2*A);if(exit<0||enter>1)return null;const u=Math.max(0,enter),p=o.addScaledVector(d,u),n=V(p.x/(s.x*s.x),p.y/(s.y*s.y),p.z/(s.z*s.z)).normalize().applyQuaternion(m.q);return {m,u,exit,normal:n};}
+function moduleDamage(m,amount,fire=0){m.hp=Math.max(0,m.hp-amount);if(m.kind==='tank'){m.leak=Math.max(m.leak,(1-m.hp)*.65);if(fire>0)m.fire=Math.max(m.fire,fire);}if(m.kind==='engine'&&fire>.2)m.fire=Math.max(m.fire,fire*.5);}
+function moduleFatal(ms){return ms.filter(m=>m.kind==='crew').every(m=>m.hp<=0)||ms.some(m=>['wing','fuselage'].includes(m.kind)&&m.hp<=0);}
+function concludeModuleDamage(t,ms){if(t){if(moduleFatal(ms)){t.moduleDead=true;if(combatTargets.includes(t))damageTargetLegacy(t,1e6,t.pos);else{t.hp=0;t.mesh.visible=false;}}else t.hp=Math.max(1,100*ms.reduce((a,m)=>a+m.hp,0)/ms.length);}else{playerCombatHealth=Math.max(1,100*ms.reduce((a,m)=>a+m.hp,0)/Math.max(1,ms.length));if(moduleFatal(ms)){state.crashed=true;$('crash-msg').style.display='block';}}}
+function moduleShot(t,a,b,shot){const ms=t?aiModules(t):playerModules,frame=moduleFrame(t),inv=frame.q.clone().invert(),la=a.clone().sub(frame.pos).applyQuaternion(inv),lb=b.clone().sub(frame.pos).applyQuaternion(inv),dir=lb.clone().sub(la).normalize(),hits=ms.filter(m=>!(!t&&m.kind==='tank'&&m.part&&droppedTanks.has(fuelKey(m.part,m.sign)))).map(m=>intersectModule(la,lb,m)).filter(Boolean).sort((a,b)=>a.u-b.u);if(!hits.length)return false;const end=lb.clone().addScaledVector(dir,Math.min(250,ms.reduce((n,m)=>Math.max(n,m.center.length()+m.size.length()),1)*2));const through=ms.filter(m=>!(!t&&m.kind==='tank'&&m.part&&droppedTanks.has(fuelKey(m.part,m.sign)))).map(m=>intersectModule(la,end,m)).filter(Boolean).sort((a,b)=>a.u-b.u);const spec=shot.ballistic??gunSpec(null,shot.key),ammo=moduleAmmo[spec.type],speed=shot.vel.clone().sub(t?(t.velocity||V()):state.vel).length();let pen=22*(spec.cal/12.7)**1.1*(speed/650)**1.5*ammo.pen,result='과관통',energy=1;for(const h of through){const m=h.m,cos=Math.abs(dir.dot(h.normal)),eq=(m.armor*(m.material==='aluminum'?.38:1)+(m.kind==='fuselage'?.6:0))/Math.max(.12,cos);if(eq>1&&cos<.22&&pen<eq*2){result='도탄';break;}if(pen<eq){result='비관통';break;}pen-=eq;energy*=Math.max(.08,1-eq/Math.max(1,pen+eq));const sensitive=m.kind==='crew'?4:m.kind==='engine'?1.4:m.kind==='controls'?2:.6;moduleDamage(m,clamp(spec.mass*speed*speed/20000, .02,1.5)*sensitive*energy,ammo.fire);if(ammo.blast&&eq>.2){for(const near of ms)if(near.center.distanceTo(m.center)<1.1)moduleDamage(near,.35*(spec.cal/20)**2,ammo.fire);result='폭발';break;}if(pen<2){result='관통';break;}}
+ concludeModuleDamage(t,ms);moduleNotice=result;moduleNoticeUntil=combatClock+1.5;addCombatEffect(a.clone().lerp(b,hits[0].u),.4);return true;}
+function moduleBlast(t,pos,damage){const ms=t?aiModules(t):playerModules,f=moduleFrame(t),local=pos.clone().sub(f.pos).applyQuaternion(f.q.clone().invert());for(const m of ms){const distance=Math.max(0,local.distanceTo(m.center)-m.size.length());moduleDamage(m,damage/120/(1+distance*distance)*(1/(1+m.armor*.08)),.25/(1+distance));}concludeModuleDamage(t,ms);}
+const damageTargetLegacy=damageTarget;damageTarget=function(t,d,p){if(moduleEnabled()&&t.air){moduleBlast(t,p,d);return;}damageTargetLegacy(t,d,p);};
+const moduleHostileLegacy=applyHostileDamage;applyHostileDamage=function(d,p){if(moduleEnabled()){if(aiAttackEnabled&&!state.crashed)moduleBlast(null,p,d);return;}moduleHostileLegacy(d,p);};
+function tagModuleShot(shot,p){if(moduleEnabled()&&shot.kind==='gun'){shot.ballistic=gunSpec(p,shot.key);const dir=shot.dir||shot.vel.clone().normalize();shot.vel.addScaledVector(dir,shot.ballistic.speed-(weaponCatalog[shot.key]?.speed||650));}return shot;}
+function moduleBulletDrag(b,dt){if(!moduleEnabled()||b.kind!=='gun')return;b.ballistic??=gunSpec(null,b.key);const v=b.vel.length(),s=b.ballistic;b.vel.multiplyScalar(Math.max(.5,1-.5*airDensity(b.pos.y)*.3*Math.PI*(s.cal/2000)**2*v*dt/s.mass));}
+const moduleEngineThrottle=engineFuelThrottle;engineFuelThrottle=function(e,t){let x=moduleEngineThrottle(e,t);if(moduleEnabled()){const ms=playerModules.filter(m=>m.kind==='engine'&&m.part?.id===e.partId&&(e.sign===undefined||m.sign===e.sign));if(ms.length)x*=ms.reduce((n,m)=>n+(m.hp<.15?0:m.hp),0)/ms.length;}return x;};
+// Empirical retained effectiveness: mild skin damage has little aerodynamic effect.
+function moduleSurfaceEffect(h){h=clamp(h,0,1);return 1-Math.pow(1-h,3);}
+const moduleAeroLegacy=aeroLoads;aeroLoads=function(...args){if(!moduleEnabled())return moduleAeroLegacy(...args);const saved=phys.surfaces.map(s=>[s,s.S,s.power]);const control=playerModules.filter(m=>m.kind==='controls').reduce((n,m)=>Math.min(n,m.hp),1);for(const [s,S,p]of saved){const m=playerModules.find(m=>m.part?.id===s.partId&&m.sign===s.signX);s.S=S*moduleSurfaceEffect(m?.hp??1);s.power=p*control;}try{return moduleAeroLegacy(...args);}finally{for(const [s,S,p]of saved){s.S=S;s.power=p;}}};
+const moduleMassLegacy=massFor;massFor=function(p,sign=1){let base=moduleMassLegacy(p,sign);if(!packs.modules)return base;if(p.type==='weapon'&&weaponCatalog[p.dims.weaponKey]?.kind==='gun')base+=weaponRounds(p,sign)*(gunSpec(p).mass-weaponCatalog[p.dims.weaponKey].roundMass);const d=p.dims,w=d.tankWidth??d.width??d.radius*2??1,h=d.tankHeight??d.height??d.radius*2??1,l=d.length??d.span??1,area=surfaceTypes.includes(p.type)?(d.rootChord+d.tipChord)*d.span:2*(w*h+w*l+h*l);return base+area*(d.armorMM||0)*.001*(d.armorMaterial==='aluminum'?2700:7850);};
+const moduleValidateLegacy=validatedDesign;validatedDesign=function(data){const clean=moduleValidateLegacy(data);for(let i=0;i<clean.parts.length;i++){const d=data.parts[i].dims||{},out=clean.parts[i].dims;for(const [k,lo,hi]of [['armorMM',0,30],['caliberMM',7,40],['barrelM',.3,3]])if(d[k]!==undefined){if(!Number.isFinite(d[k])||d[k]<lo||d[k]>hi)throw Error('장갑/탄도 설정 범위 오류');out[k]=d[k];}for(const [k,values]of [['ammoType',Object.keys(moduleAmmo)],['armorMaterial',['steel','aluminum']]])if(d[k]!==undefined){if(!values.includes(d[k]))throw Error('장갑/탄종 오류');out[k]=d[k];}}return clean;};
+const moduleEditorLegacy=renderEditor;renderEditor=function(){moduleEditorLegacy();if(!packs.modules)return;const p=partsList.find(p=>p.id===selectedPartId);if(!p)return;const box=$('part-editor'),d=p.dims;box.append(sliderField('추가 장갑 두께 (mm)',d.armorMM??0,0,30,.5,v=>d.armorMM=v),selectField('장갑 재질',[['steel','강철'],['aluminum','알루미늄']],d.armorMaterial??'steel',v=>d.armorMaterial=v));if(p.type==='weapon'&&weaponCatalog[d.weaponKey]?.kind==='gun'){box.append(sliderField('구경 (mm)',d.caliberMM??gunSpec(p).cal,7,40,.1,v=>d.caliberMM=v),sliderField('유효 총열 길이 (m)',d.barrelM??gunSpec(p).barrel,.3,3,.05,v=>d.barrelM=v),selectField('탄종',Object.entries(moduleAmmo).map(([k,a])=>[k,a.name]),d.ammoType??'AP',v=>d.ammoType=v));const note=document.createElement('p');note.textContent='20mm 미만의 HEI 선택은 API로 처리됩니다. 구경·총열은 모듈 팩 탄도 계산용이며 외형 크기와 독립입니다.';box.append(note);}};
+const moduleResetLegacy=resetFlight;resetFlight=function(){moduleResetLegacy();resetPlayerModules();for(const t of combatTargets)t.modules=null;};
+const moduleRefillLegacy=refillFuel;refillFuel=function(){moduleRefillLegacy();if(moduleEnabled())resetPlayerModules();};
+function updateModuleSystem(dt){if($('module-panel'))$('module-panel').hidden=!moduleEnabled();if(!moduleEnabled()||!flightActive()||paused)return;moduleTick+=dt;if(moduleTick<.1)return;const step=Math.min(.25,moduleTick);moduleTick=0;for(const m of playerModules){if(m.kind==='tank'&&m.part){const key=fuelKey(m.part,m.sign),fuel=fuelStores.get(key)||0;if(droppedTanks.has(key))continue;fuelStores.set(key,Math.max(0,fuel-step*(m.leak+m.fire*.35)));if(fuel<=0)m.fire=0;}if(m.fire){moduleDamage(m,m.fire*step*.035);for(const near of playerModules)if(near!==m&&near.center.distanceTo(m.center)<m.size.length()+.5)moduleDamage(near,m.fire*step*.008);if(m.kind==='tank'&&m.hp<.05)m.fire=Math.min(1,m.fire+step*.1);}}
+ concludeModuleDamage(null,playerModules);for(const t of [...combatTargets,...wingmen])if(t.hp>0&&t.modules){const ms=t.modules;for(const m of ms)if(m.fire)moduleDamage(m,m.fire*step*.035);concludeModuleDamage(t,ms);if(ms.some(m=>m.kind==='engine'&&m.hp<.2)){t.returning=true;t.pos.y-=step*8;}if(ms.some(m=>m.kind==='htail'&&m.hp<.3))t.pos.y-=step*4;}
+ const panel=$('module-status');if(panel){panel.hidden=false;panel.replaceChildren();const title=document.createElement('strong');title.textContent='기체 모듈 상태';panel.append(title);for(const m of playerModules){const row=document.createElement('div');row.textContent=(m.part?(typeLabel[m.part.type]||m.kind):'조종사')+' · '+({crew:'승무원',tank:'연료',controls:'조종계',engine:'엔진',wing:'주익',htail:'수평미익',vtail:'수직미익',fuselage:'구조'}[m.kind]||'장치')+(m.sign<0?' L':' R')+' '+Math.round(m.hp*100)+'%'+(m.fire?' · 화재':'')+(m.leak?' · 누출':'');row.style.color=m.hp>.7?'#fff':m.hp>.3?'#ffe290':'#ff8080';panel.append(row);}if(combatClock<moduleNoticeUntil){const row=document.createElement('div');row.textContent=moduleNotice;panel.append(row);}}
+}
+function setupModuleDamage(){const panel=document.createElement('details');panel.id='module-panel';panel.innerHTML='<summary>모듈 상태</summary><div id="module-status" style="max-height:200px;overflow:auto;font-size:11px"></div>';panel.hidden=!moduleEnabled();$('flight-left-column').append(panel);const old=$('pack-modules').onchange;$('pack-modules').onchange=e=>{old(e);computePhysicsData();renderEditor();resetPlayerModules();};$('help-dialog').insertAdjacentHTML('beforeend','<h3>모듈 손상 팩</h3><p>전투 팩과 모듈 손상 팩을 함께 켜세요. 부품별 추가 장갑은 무게와 관성에 반영됩니다. 기관총/기관포의 구경, 유효 총열 길이, 탄종을 설정할 수 있습니다. AP는 관통, API는 관통·발화, HEI는 근거리 모듈 폭발, T는 예광 계열입니다. 장갑과 충돌 각도에 따라 도탄·비관통·관통·과관통을 판정합니다. 관통 경로의 내부 장치도 피해를 받습니다.</p><p>승무원 전원 무력화 또는 주 구조 파괴는 기체 손실입니다. 엔진·날개·조종계 손상은 출력·양력·조종력을 낮추고 연료탱크는 누출·화재가 발생합니다. 날개·미익은 경미한 손상에서 성능 저하를 작게 적용하고 심각한 손상에서 저하 폭이 커집니다. 날개 면적과 조종면 힘에 동일 손상을 중복 적용하지 않습니다. 조종계 손상은 별도로 적용됩니다. 10초 재보급에서 모듈도 정비됩니다. 모듈 상태 창으로 부위를 확인하세요. 자동 배치한 타원체 충돌 볼륨, 경험식 탄도·장갑 계수와 간소화 화재를 사용하며 실제 기종별 장갑 자료나 워썬더 내부 수치를 재현한 모델은 아닙니다. 파괴 외형은 후속 단계입니다.</p>');}
+
+const moduleAIShoot=launchAIWeapon;launchAIWeapon=function(...args){const n=hostileShots.length,result=moduleAIShoot(...args);for(let i=n;i<hostileShots.length;i++)tagModuleShot(hostileShots[i],null);return result;};
+const moduleSoundLegacy=updateFlightSound;updateFlightSound=function(){moduleSoundLegacy();if(moduleEnabled()&&soundReady)for(const s of soundSources){const engines=playerModules.filter(m=>m.kind==='engine'&&m.part?.dims.kind===s.key);if(engines.length&&engines.every(m=>m.hp<.15))s.gain.gain.setTargetAtTime(0,soundContext.currentTime,.15);}};
 
 
 
@@ -6752,19 +6886,22 @@ function animate(){
   aircraftGroup.position.copy(renderPose.pos).sub(phys.cg.clone().applyQuaternion(renderPose.quat));aircraftGroup.quaternion.copy(renderPose.quat);
   hudTick+=dt;if(hudTick>.05){updateHUD();updateInstruments();hudTick=0;}
  }
- updateWorld();updateEnhancements();updateRevision(dt);updateCockpitUpgrade(dt);updateGroundRocket(dt);updateFlightPolish(dt);updateMissionExpansion(dt);updateAirfieldServices(dt);updateCrewSystems(dt);updateEnvironmentOperations(dt);renderRocketFeed(dt);graphicsHealth.stage="main-render";resetGraphicsPass();
+ updateWorld();updateEnhancements();updateRevision(dt);updateCockpitUpgrade(dt);updateGroundRocket(dt);updateFlightPolish(dt);updateMissionExpansion(dt);updateAirfieldServices(dt);updateCrewSystems(dt);updateEnvironmentOperations(dt);updateModuleSystem(dt);renderRocketFeed(dt);graphicsHealth.stage="main-render";resetGraphicsPass();
  if(![...camera.position.toArray(),...camera.quaternion.toArray()].every(Number.isFinite))throw Error("카메라 좌표가 유한하지 않습니다.");
  graphicsHealth.lastCamera={position:camera.position.clone(),quaternion:camera.quaternion.clone()};
  renderer.render(scene,camera);graphicsHealth.stage="cockpit-render";renderCockpitOverlay();recordFlightFrame(performance.now());graphicsHealth.stage="idle";
  }catch(error){console.error(error);graphicsFault("frame-error",error);}
 }
+const canopyValidate97=validatedDesign;validatedDesign=function(data){const clean=canopyValidate97(data);for(let i=0;i<clean.parts.length;i++){const p=clean.parts[i],d=data.parts[i].dims;if(p.type!=='cockpit')continue;const h=d.canopyHeight;if(h!==undefined&&(!Number.isFinite(h)||h<.04||h>12))throw Error('캐노피 높이 범위: 0.04~12 m');p.dims.canopyHeight=canopyHeight97({...p.dims,canopyHeight:h});if(p.dims.canopyShape==='low')p.dims.canopyShape='bubble';}return clean;};
+const canopyEditor97=renderEditor;renderEditor=function(){canopyEditor97();const p=partsList.find(p=>p.id===selectedPartId);if(p?.type==='cockpit')$('part-editor').append(sliderField('캐노피 높이 (m)',canopyHeight97(p.dims),.04,12,.01,v=>p.dims.canopyHeight=v));};
+function setupCanopy97(){const box=$('wind-direction')?.closest('.course-picker'),env=$('menu-pane-environment');if(box&&env){env.append(box);const note=box.querySelector('small');if(note)note.textContent='0° 북풍 · 90° 동풍 · 180° 남풍 · 270° 서풍. 안개·비·악천후는 별도의 돌풍을 추가합니다.';}Object.assign(uiEnglish,{'캐노피 높이 (m)':'Canopy height (m)'});}
 try{
  setupUpgradeUI();partsList=presetParts('plane');initScene();
  designStand=buildDesignHangar();setupEnhancements();setupRevision();setupCockpitUpgrade();setupGroundRocket();setupFlightPolish();setupCabinRefinement();setupCabinOptions();setupStudioTools();setupWarbird();setupFlightRealism();setupHandling();setupLateralTrim();buildSecondRunway();setupCoastalUpdate();setupNavalWorld();setupTransportRunway();setupExpansionPacks();setupCombatUpgrade();setupTurretHUD();setupOperationsUpdate();setupCombatDefense();
  setupBasicPhysics();setupFlightSystems();setupCampaign();setupWorkspaceUI();setupFlightFeedback();setupCabinDetail();setupSortieUpdate();setupPresentationFix();arrangePartButtons();orbitDist=19.5;orbitPitch=.23;setupOrbitControls();setupFlightControls();rebuildAircraft();selectedPartId='root';renderPartsList();renderEditor();updateBuilderCamera();
  document.querySelectorAll('.mode-btn[data-mode]').forEach(b=>b.onclick=()=>{if(b.dataset.mode==='design')enterBuilder();else{currentMission=b.dataset.mode==='mission';launchFlight();}});
  $('start-flying').onclick=()=>{currentMission=false;launchFlight();};$('start-mission').onclick=()=>{currentMission=true;launchFlight();};$('back-to-menu').onclick=goMenu;
- $('world-status').style.display='none';document.querySelector('[data-add="delta"]')?.remove();setupMenuAudioUpdate();setupCockpitAudioRefresh();setupWarbirdCabinDetail();setupLanguage();setupCockpitRestoration();setupCockpitErgonomics();setupMissionExpansion();setupAirfieldServices();setupCrewSystems();setupEnvironmentOperations();document.querySelectorAll('#menu-card .sub, #menu-card .eyebrow, #menu-card .mode-btn .d, #menu-card small').forEach(el=>{if(!el.querySelector('input,select,button'))el.remove();});setupGraphicsSafety();document.body.classList.add('app-ready');animate();window.FLIGHT_READY=true;
+ $('world-status').style.display='none';document.querySelector('[data-add="delta"]')?.remove();setupMenuAudioUpdate();setupCockpitAudioRefresh();setupWarbirdCabinDetail();setupLanguage();setupCockpitRestoration();setupCockpitErgonomics();setupMissionExpansion();setupAirfieldServices();setupCrewSystems();setupEnvironmentOperations();document.querySelectorAll('#menu-card .sub, #menu-card .eyebrow, #menu-card .mode-btn .d, #menu-card small').forEach(el=>{if(!el.querySelector('input,select,button'))el.remove();});setupGraphicsSafety();setupModuleDamage();setupHud90();setupCanopy97();document.body.classList.add('app-ready');animate();window.FLIGHT_READY=true;
 }catch(error){console.error(error);document.body.classList.add('app-ready');const p=document.createElement('p');p.style.color='#ffbb99';p.textContent='시작 실패: '+error.message;$('menu-card').append(p);rememberGraphicsEvent('startup-error',error.message);const recovery=document.createElement('button');recovery.textContent='그래픽 안정성 모드로 다시 열기';recovery.onclick=()=>{try{localStorage.setItem('flightlab.graphicsSafe','1');}catch(e){}location.reload();};$('menu-card').append(recovery);}
 
 </script>
